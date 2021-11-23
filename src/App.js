@@ -7,11 +7,15 @@ import {
   MeshBuilder,
   StandardMaterial,
   Texture,
+  SceneLoader,
+  SpotLight,
+  DirectionalLight,
 } from "@babylonjs/core";
 
 import SceneComponent from "babylonjs-hook";
 import "./App.css";
 import seedrandom from "seedrandom";
+import "@babylonjs/loaders/glTF";
 
 const RoomType = Object.freeze({
   ROOM_CLOSED: 0,
@@ -118,11 +122,29 @@ const App = () => {
     camera.inertia = 0;
 
     camera.ellipsoid = new Vector3(1.5, 0.5, 1.5);
-    camera.checkCollisions = true;
+    //camera.checkCollisions = true;
 
     var light = new PointLight("Light", new Vector3(0, 25, 0), scene);
     light.intensity = 1;
     light.range = 400;
+
+    var light1 = new SpotLight(
+      "spotLight1",
+      new Vector3(0, 30, 20),
+      new Vector3(0, 0, 50),
+      Math.PI / 2,
+      16,
+      scene
+    );
+    light1.intensity = 6;
+
+    const dirLight = new DirectionalLight(
+      "dirLight",
+      new Vector3(1, 1, 1),
+      scene
+    );
+
+    dirLight.position = new Vector3(0, 50, -50);
 
     const frontWall = MeshBuilder.CreateBox("Front Wall", {});
     frontWall.scaling = new Vector3(100, 80, 10);
@@ -182,6 +204,28 @@ const App = () => {
     ceilingMaterial.specularColor = new Color3(0, 0, 0);
 
     ceiling.material = ceilingMaterial;
+
+    SceneLoader.ImportMesh("", "/models/", "frame.glb", scene, (meshes) => {
+      for (const mesh of meshes) {
+        if (mesh.material) {
+          mesh.material.sideOrientation = 1;
+        }
+
+        if (mesh.name === "__root__") {
+          mesh.scaling = new Vector3(5, 5, 5);
+          mesh.position = new Vector3(0, 30, 42);
+          mesh.rotation = new Vector3(0, Math.PI / 2, 0);
+
+          const painting = MeshBuilder.CreatePlane(
+            "Painting",
+            { width: 2, height: 3 },
+            scene
+          );
+          painting.scaling = new Vector3(10, 10, 10);
+          painting.position = new Vector3(0, 30, 44);
+        }
+      }
+    });
 
     scene.clearColor = new Color3(0, 0, 0);
     scene.registerBeforeRender(() => {
