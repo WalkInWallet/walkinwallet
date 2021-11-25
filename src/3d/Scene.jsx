@@ -8,7 +8,7 @@ import {
 
 import SceneComponent from "babylonjs-hook";
 import "@babylonjs/loaders/glTF";
-import { RoomType, createRoomTile } from "./RoomBuilder";
+import { createRoomTile } from "./RoomBuilder";
 
 const Scene = (props) => {
   const CAMERA_HEIGHT = 30;
@@ -81,21 +81,9 @@ const Scene = (props) => {
     });
     */
 
-    createRoomTile(RoomType.BOTTOM_OPEN, 1, 1, scene);
-
-    createRoomTile(RoomType.CORNER_LEFT_TOP, 0, 0, scene);
-    createRoomTile(RoomType.SPACE, 0, 1, scene);
-    createRoomTile(RoomType.CORNER_RIGHT_TOP, 0, 2, scene);
-
-    createRoomTile(RoomType.LEFT_CLOSED, -1, 0, scene);
-    createRoomTile(RoomType.SPACE, -1, 1, scene);
-    createRoomTile(RoomType.RIGHT_CLOSED, -1, 2, scene);
-
-    createRoomTile(RoomType.CORNER_LEFT_BOTTOM, -2, 0, scene);
-    createRoomTile(RoomType.SPACE, -2, 1, scene);
-    createRoomTile(RoomType.CORNER_RIGHT_BOTTOM, -2, 2, scene);
-
-    createRoomTile(RoomType.TOP_OPEN, -3, 1, scene);
+    for (const room of props.gallery) {
+      createRoomTile(room.type, room.row, room.col, scene);
+    }
 
     const light = new HemisphericLight(
       "HemisphericLight",

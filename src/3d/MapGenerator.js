@@ -1,0 +1,228 @@
+import { RoomType } from "./RoomBuilder";
+import seedrandom from "seedrandom";
+
+const estimateRoomType = (room) => {
+  if (
+    room["left"] > -1 &&
+    room["right"] > -1 &&
+    room["above"] > -1 &&
+    room["below"] > -1
+  ) {
+    return RoomType.SPACE;
+  } else if (
+    room["left"] > -1 &&
+    room["right"] > -1 &&
+    room["above"] > -1 &&
+    room["below"] === -1
+  ) {
+    return RoomType.BOTTOM_CLOSED;
+  } else if (
+    room["left"] > -1 &&
+    room["right"] > -1 &&
+    room["above"] === -1 &&
+    room["below"] > -1
+  ) {
+    return RoomType.TOP_CLOSED;
+  } else if (
+    room["left"] > -1 &&
+    room["right"] === -1 &&
+    room["above"] > -1 &&
+    room["below"] > -1
+  ) {
+    return RoomType.RIGHT_CLOSED;
+  } else if (
+    room["left"] === -1 &&
+    room["right"] > -1 &&
+    room["above"] > -1 &&
+    room["below"] > -1
+  ) {
+    return RoomType.LEFT_CLOSED;
+  } else if (
+    room["left"] === -1 &&
+    room["right"] === -1 &&
+    room["above"] > -1 &&
+    room["below"] > -1
+  ) {
+    return RoomType.VERTICAL_FLOOR;
+  } else if (
+    room["left"] > -1 &&
+    room["right"] > -1 &&
+    room["above"] === -1 &&
+    room["below"] === -1
+  ) {
+    return RoomType.HORIZONTAL_FLOOR;
+  } else if (
+    room["left"] === -1 &&
+    room["right"] > -1 &&
+    room["above"] === -1 &&
+    room["below"] > -1
+  ) {
+    return RoomType.CORNER_LEFT_TOP;
+  } else if (
+    room["left"] > -1 &&
+    room["right"] === -1 &&
+    room["above"] === -1 &&
+    room["below"] > -1
+  ) {
+    return RoomType.CORNER_RIGHT_TOP;
+  } else if (
+    room["left"] > -1 &&
+    room["right"] === -1 &&
+    room["above"] > -1 &&
+    room["below"] === -1
+  ) {
+    return RoomType.CORNER_RIGHT_BOTTOM;
+  } else if (
+    room["left"] === -1 &&
+    room["right"] > -1 &&
+    room["above"] > -1 &&
+    room["below"] === -1
+  ) {
+    return RoomType.CORNER_LEFT_BOTTOM;
+  } else if (
+    room["left"] === -1 &&
+    room["right"] === -1 &&
+    room["above"] === -1 &&
+    room["below"] > -1
+  ) {
+    return RoomType.BOTTOM_OPEN;
+  } else if (
+    room["left"] === -1 &&
+    room["right"] === -1 &&
+    room["above"] > -1 &&
+    room["below"] === -1
+  ) {
+    return RoomType.TOP_OPEN;
+  } else if (
+    room["left"] === -1 &&
+    room["right"] > -1 &&
+    room["above"] === -1 &&
+    room["below"] === -1
+  ) {
+    return RoomType.RIGHT_OPEN;
+  } else if (
+    room["left"] > -1 &&
+    room["right"] === -1 &&
+    room["above"] === -1 &&
+    room["below"] === -1
+  ) {
+    return RoomType.LEFT_OPEN;
+  }
+};
+
+const recalculateNeighbourRooms = (rooms, room) => {
+  const { row, col, id } = room;
+
+  for (const target of rooms) {
+    if (target.row === row - 1 && target.col === col) {
+      target.above = id;
+      target.type = estimateRoomType(target);
+      target.extensions += 1;
+      room.extensions += 1;
+      room.below = target.id;
+    } else if (target.col === col - 1 && target.row === row) {
+      target.right = id;
+      target.type = estimateRoomType(target);
+      target.extensions += 1;
+      room.extensions += 1;
+      room.left = target.id;
+    } else if (target.row === row + 1 && target.col === col) {
+      target.below = id;
+      target.type = estimateRoomType(target);
+      target.extensions += 1;
+      room.extensions += 1;
+      room.above = target.id;
+    } else if (target.col === col + 1 && target.row === row) {
+      target.left = id;
+      target.type = estimateRoomType(target);
+      target.extensions += 1;
+      room.extensions += 1;
+      room.right = target.id;
+    }
+  }
+
+  const target = rooms.find((room) => room.col === col && room.row === row);
+  target.type = estimateRoomType(target);
+  return rooms;
+};
+
+const recalculateSpace = (rooms) => {
+  let space = 0;
+  for (const room of rooms) {
+    space += 8 - 2 * room.extensions;
+  }
+  return space;
+};
+
+const buildGallery = (hash, paintings) => {
+  var random = seedrandom(hash);
+
+  let rooms = [
+    {
+      type: RoomType.RIGHT_OPEN,
+      id: 0,
+      extensions: 1,
+      row: 0,
+      col: 0,
+      above: -1,
+      below: -1,
+      left: -1,
+      right: 1,
+    },
+    {
+      type: RoomType.LEFT_OPEN,
+      id: 1,
+      extensions: 1,
+      row: 0,
+      col: 1,
+      above: -1,
+      below: -1,
+      left: 0,
+      right: -1,
+    },
+  ];
+
+  let space = recalculateSpace(rooms);
+
+  while (space < paintings) {
+    const options = rooms.filter((room) => room.extensions < 4);
+    const choice = options[Math.floor(random() * options.length)];
+
+    const sides = ["above", "below", "left", "right"].filter(
+      (side) => choice[side] === -1
+    );
+
+    const side = sides[Math.floor(random() * sides.length)];
+
+    const room = {
+      type: RoomType.ROOM_CLOSED,
+      id: rooms.length,
+      extensions: 0,
+      row: choice.row,
+      col: choice.col,
+      above: -1,
+      below: -1,
+      left: -1,
+      right: -1,
+    };
+
+    if (side === "above") {
+      room.row = room.row + 1;
+    } else if (side === "below") {
+      room.row = room.row - 1;
+    } else if (side === "left") {
+      room.col = room.col - 1;
+    } else if (side === "right") {
+      room.col = room.col + 1;
+    }
+
+    rooms.push(room);
+
+    rooms = recalculateNeighbourRooms(rooms, room);
+    space = recalculateSpace(rooms);
+  }
+
+  return rooms;
+};
+
+export { buildGallery };
