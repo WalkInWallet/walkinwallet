@@ -2,16 +2,11 @@ import {
   UniversalCamera,
   Vector3,
   Color3,
-  PointLight,
-  MeshBuilder,
-  StandardMaterial,
-  Texture,
-  SceneLoader,
   DirectionalLight,
+  HemisphericLight,
 } from "@babylonjs/core";
 
 import SceneComponent from "babylonjs-hook";
-import seedrandom from "seedrandom";
 import "@babylonjs/loaders/glTF";
 import { RoomType, createRoomTile } from "./RoomBuilder";
 
@@ -19,59 +14,6 @@ const Scene = (props) => {
   const CAMERA_HEIGHT = 30;
 
   const onRender = (scene) => {};
-
-  const buildGallery = (hash, paintings) => {
-    var random = seedrandom(hash);
-
-    let rooms = [
-      {
-        render: RoomType.ROOM_CLOSED,
-        id: 0,
-        extensions: 0,
-        row: 0,
-        col: 0,
-        above: -1,
-        below: -1,
-        left: -1,
-        right: -1,
-        spaces: 8,
-      },
-    ];
-
-    let space = 8;
-
-    while (space < paintings) {
-      const options = rooms.filter((room) => room.extensions < 4);
-      const choice = options[Math.floor(random() * options.length)];
-
-      let sides = ["above", "below", "left", "right"];
-      sides = sides.filter((side) => choice[side] !== -1);
-
-      const side = sides[Math.floor(random() * sides.length)];
-      const room = {
-        type: RoomType.ROOM_CLOSED,
-        id: rooms.length,
-        extensions: 0,
-        row: 0,
-        col: 0,
-        above: -1,
-        below: -1,
-        left: -1,
-        right: -1,
-        spaces: 8,
-      };
-
-      if (side === "above") {
-        room.below = choice.id;
-        room.row = choice.row;
-        room.col = choice.col + 1;
-        room.type = RoomType.ROOM_BOTTOM_OPEN;
-        room.spaces = 6;
-      }
-    }
-
-    return rooms;
-  };
 
   const onSceneReady = (scene) => {
     const camera = new UniversalCamera(
@@ -139,10 +81,37 @@ const Scene = (props) => {
     });
     */
 
+    createRoomTile(RoomType.BOTTOM_OPEN, 1, 1, scene);
+
     createRoomTile(RoomType.CORNER_LEFT_TOP, 0, 0, scene);
-    createRoomTile(RoomType.CORNER_RIGHT_TOP, 0, 1, scene);
-    createRoomTile(RoomType.CORNER_LEFT_BOTTOM, -1, 0, scene);
-    createRoomTile(RoomType.CORNER_RIGHT_BOTTOM, -1, 1, scene);
+    createRoomTile(RoomType.SPACE, 0, 1, scene);
+    createRoomTile(RoomType.CORNER_RIGHT_TOP, 0, 2, scene);
+
+    createRoomTile(RoomType.LEFT_CLOSED, -1, 0, scene);
+    createRoomTile(RoomType.SPACE, -1, 1, scene);
+    createRoomTile(RoomType.RIGHT_CLOSED, -1, 2, scene);
+
+    createRoomTile(RoomType.CORNER_LEFT_BOTTOM, -2, 0, scene);
+    createRoomTile(RoomType.SPACE, -2, 1, scene);
+    createRoomTile(RoomType.CORNER_RIGHT_BOTTOM, -2, 2, scene);
+
+    createRoomTile(RoomType.TOP_OPEN, -3, 1, scene);
+
+    const light = new HemisphericLight(
+      "HemisphericLight",
+      new Vector3(0, 1, 0),
+      scene
+    );
+
+    light.intensity = 1.5;
+
+    const directionalLight = new DirectionalLight(
+      "DirectionalLight",
+      new Vector3(0, 1, 0),
+      scene
+    );
+
+    directionalLight.intensity = 1.5;
 
     scene.clearColor = new Color3(0, 0, 0);
     scene.registerBeforeRender(() => {

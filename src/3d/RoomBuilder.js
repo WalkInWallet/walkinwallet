@@ -5,8 +5,6 @@ import {
   Color3,
   MeshBuilder,
   Mesh,
-  PointLight,
-  DirectionalLight,
 } from "@babylonjs/core";
 
 const RoomType = Object.freeze({
@@ -46,22 +44,6 @@ const createRoomTile = (type, row, col, scene) => {
   ceilingMaterial.diffuseTexture.vScale = 8.0;
   ceilingMaterial.specularColor = new Color3(0, 0, 0);
 
-  const light = new PointLight(
-    "Light",
-    new Vector3(col * 100, 25, row * 100),
-    scene
-  );
-  light.intensity = 1;
-  light.range = 400;
-
-  /*const directionalLight = new DirectionalLight(
-    "DirectionalLight",
-    new Vector3(1, 1, 1),
-    scene
-  );
-
-  directionalLight.position = new Vector3(0 + col * 100, 50, -50 + row * 100);*/
-
   const ground = MeshBuilder.CreatePlane(
     "Ground",
     { size: 100, sideOrientation: Mesh.DOUBLESIDE },
@@ -97,7 +79,7 @@ const createRoomTile = (type, row, col, scene) => {
       { width: 100, height: 80, sideOrientation: Mesh.DOUBLESIDE },
       scene
     );
-    front.position = new Vector3(col * 100, 40, 50 + row * 50);
+    front.position = new Vector3(col * 100, 40, 50 + row * 100);
     walls.push(front);
   }
 
