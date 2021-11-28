@@ -149,13 +149,14 @@ const recalculateNeighbourRooms = (rooms, room) => {
 const recalculateSpace = (rooms) => {
   let space = 0;
   for (const room of rooms) {
-    space += 8 - 2 * room.extensions;
+    room["space"] = 8 - 2 * room.extensions;
+    space += room.space;
   }
   return space;
 };
 
 const buildGallery = (hash, paintings) => {
-  var random = seedrandom(hash);
+  const random = seedrandom(hash);
 
   let rooms = [
     {
@@ -184,7 +185,10 @@ const buildGallery = (hash, paintings) => {
 
   let space = recalculateSpace(rooms);
 
-  while (space < paintings) {
+  let MARGIN = 12;
+  let requiredSpace = paintings + MARGIN;
+
+  while (space < requiredSpace) {
     const options = rooms.filter((room) => room.extensions < 4);
     const choice = options[Math.floor(random() * options.length)];
 

@@ -1,10 +1,9 @@
 import {
   Vector3,
-  StandardMaterial,
   Texture,
-  Color3,
   MeshBuilder,
   Mesh,
+  PBRMetallicRoughnessMaterial,
 } from "@babylonjs/core";
 
 const RoomType = Object.freeze({
@@ -26,23 +25,52 @@ const RoomType = Object.freeze({
 });
 
 const createRoomTile = (type, row, col, scene) => {
-  const brickMaterial = new StandardMaterial("BrickMaterial", scene);
-  brickMaterial.diffuseTexture = new Texture("./textures/bricks.jpg");
-  brickMaterial.diffuseTexture.uScale = 3.0;
-  brickMaterial.diffuseTexture.vScale = 2.0;
-  brickMaterial.specularColor = new Color3(0, 0, 0);
+  const wallMaterial = new PBRMetallicRoughnessMaterial("wallMaterial", scene);
+  wallMaterial.baseTexture = new Texture(
+    "./textures/Wallpaper_Glassweave_001_ambientOcclusion_blue.jpg"
+  );
+  wallMaterial.metallic = 0.1;
+  wallMaterial.roughness = 0.9;
+  wallMaterial.baseTexture.uScale = 2;
+  wallMaterial.baseTexture.vScale = 2;
 
-  const groundMaterial = new StandardMaterial("GroundMaterial", scene);
-  groundMaterial.diffuseTexture = new Texture("./textures/ground.jpg");
-  groundMaterial.diffuseTexture.uScale = 8.0;
-  groundMaterial.diffuseTexture.vScale = 8.0;
-  groundMaterial.specularColor = new Color3(0, 0, 0);
+  wallMaterial.metallicRoughnessTexture = new Texture(
+    "./textures/Wallpaper_Glassweave_001_roughness.jpg"
+  );
+  wallMaterial.metallicRoughnessTexture.uScale = 2;
+  wallMaterial.metallicRoughnessTexture.vScale = 2;
 
-  const ceilingMaterial = new StandardMaterial("CeilingMaterial", scene);
-  ceilingMaterial.diffuseTexture = new Texture("./textures/concrete.jpg");
-  ceilingMaterial.diffuseTexture.uScale = 8.0;
-  ceilingMaterial.diffuseTexture.vScale = 8.0;
-  ceilingMaterial.specularColor = new Color3(0, 0, 0);
+  wallMaterial.normalTexture = new Texture(
+    "./textures/Wallpaper_Glassweave_001_normal.jpg"
+  );
+  wallMaterial.normalTexture.uScale = 2;
+  wallMaterial.normalTexture.vScale = 2;
+
+  const groundMaterial = new PBRMetallicRoughnessMaterial(
+    "GroundMaterial",
+    scene
+  );
+  groundMaterial.baseTexture = new Texture(
+    "./textures/Wood_Floor_011_basecolor.jpg"
+  );
+  groundMaterial.metallic = 0;
+  groundMaterial.roughness = 1;
+
+  const ceilingMaterial = new PBRMetallicRoughnessMaterial(
+    "GroundMaterial",
+    scene
+  );
+  ceilingMaterial.baseTexture = new Texture(
+    "./textures/Wood_Floor_006_OCC.jpg"
+  );
+
+  ceilingMaterial.metallicRoughnessTexture = new Texture(
+    "./textures/Wood_Floor_006_ROUGH.jpg"
+  );
+
+  ceilingMaterial.normalTexture = new Texture(
+    "./textures/Wood_Floor_006_NORM.jpg"
+  );
 
   const ground = MeshBuilder.CreatePlane(
     "Ground",
@@ -148,7 +176,7 @@ const createRoomTile = (type, row, col, scene) => {
 
   for (const wall of walls) {
     wall.checkCollisions = true;
-    wall.material = brickMaterial;
+    wall.material = wallMaterial;
   }
 };
 

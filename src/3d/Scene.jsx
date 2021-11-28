@@ -2,13 +2,15 @@ import {
   UniversalCamera,
   Vector3,
   Color3,
-  DirectionalLight,
   HemisphericLight,
+  PointLight,
+  Light,
 } from "@babylonjs/core";
 
 import SceneComponent from "babylonjs-hook";
 import "@babylonjs/loaders/glTF";
 import { createRoomTile } from "./RoomBuilder";
+import { drawPainting } from "./PaintingDrawer";
 
 const Scene = (props) => {
   const CAMERA_HEIGHT = 30;
@@ -50,60 +52,32 @@ const Scene = (props) => {
     camera.ellipsoid = new Vector3(1.5, 0.5, 1.5);
     camera.checkCollisions = true;
 
-    /*
-    SceneLoader.ImportMesh("", "/models/", "frame.glb", scene, (meshes) => {
-      for (const mesh of meshes) {
-        if (mesh.material) {
-          mesh.material.sideOrientation = 1;
-        }
-
-        if (mesh.name === "__root__") {
-          mesh.scaling = new Vector3(5, 5, 5);
-          mesh.position = new Vector3(0, 30, 42);
-          mesh.rotation = new Vector3(0, Math.PI / 2, 0);
-
-          const painting = MeshBuilder.CreatePlane(
-            "Painting",
-            { width: 2, height: 3 },
-            scene
-          );
-          painting.scaling = new Vector3(10, 10, 10);
-          painting.position = new Vector3(0, 30, 44);
-
-          const paintingMaterial = new StandardMaterial("boxMat");
-          paintingMaterial.diffuseTexture = new Texture(
-            "./textures/berggorilla.jpg"
-          );
-          paintingMaterial.specularColor = new Color3(0, 0, 0);
-          painting.material = paintingMaterial;
-        }
-      }
-    });
-    */
-
     for (const room of props.gallery) {
       createRoomTile(room.type, room.row, room.col, scene);
     }
 
+    for (const painting of props.paintings) {
+      drawPainting(painting, scene);
+    }
+
     const light = new HemisphericLight(
       "HemisphericLight",
-      new Vector3(0, 1, 0),
+      new Vector3(0, 0, 0),
       scene
     );
 
-    light.intensity = 1.5;
+    light.intensity = 0.3;
 
-    const directionalLight = new DirectionalLight(
-      "DirectionalLight",
-      new Vector3(0, 1, 0),
-      scene
-    );
-
-    directionalLight.intensity = 1.5;
+    const pointLight = new PointLight("PointLight", new Vector3(0, 30, 0));
+    pointLight.falloffType = Light.FALLOFF_STANDARD;
+    pointLight.range = 250;
+    pointLight.intensity = 4;
 
     scene.clearColor = new Color3(0, 0, 0);
     scene.registerBeforeRender(() => {
       camera.position.y = CAMERA_HEIGHT;
+      pointLight.position.x = camera.position.x;
+      pointLight.position.z = camera.position.z;
     });
 
     canvas.addEventListener(
