@@ -1,64 +1,116 @@
-import { useEffect, useCallback, useState, useMemo } from "react";
+import axios from "axios";
+import { useEffect, useCallback, useState } from "react";
 import { useMoralisWeb3Api, useMoralis } from "react-moralis";
 import { buildGallery } from "./3d/MapGenerator";
 import { hangPaintings } from "./3d/PaintingDrawer";
 import Scene from "./3d/Scene";
 import "./App.css";
+import WelcomePage from "./pages/WelcomePage";
+import {
+  HashRouter as Router,
+  Routes,
+  Route,
+  useParams,
+  Link,
+} from "react-router-dom";
 
-const App = () => {
+const Main = (props) => {
   const { account } = useMoralisWeb3Api();
-  const address = useMemo(
-    () => "0xb251eF5A3d35776931805eb54C73E07B5BeC1632",
-    []
-  );
+  const { address } = useParams();
 
   const { isInitialized } = useMoralis();
-  const [nfts, setNfts] = useState([]);
-  const [fetching, setFetching] = useState(true);
-  const [paintings, setPaintings] = useState([]);
-  const [gallery, setGallery] = useState();
-  const [ready, setReady] = useState(false);
+  const [nfts, setNfts] = useState();
 
   const fetchNFTs = useCallback(async () => {
     if (isInitialized) {
-      let response = await account.getNFTs({
-        chain: "matic",
-        address: address,
-      });
+      let pictures = [];
 
-      setNfts(
-        response.result.map((result) =>
-          JSON.parse(result.metadata.replaceAll("\n", " "))
+      for (const network of ["eth", "polygon", "bsc"]) {
+        try {
+          const response = await account.getNFTs({
+            chain: network,
+            address: address,
+            limit: 200,
+          });
+          pictures = [...pictures, ...response.result];
+        } catch (error) {
+          console.warn(`Failed to fetch NFTs from ${network} network`);
+        }
+      }
+
+      pictures = pictures
+        .filter(
+          (result) =>
+            typeof result.metadata !== "undefined" && result.metadata !== null
         )
+        .map((result) => ({
+          ...result,
+          ...JSON.parse(result.metadata.replaceAll("\n", " ")),
+        }));
+
+      for (const picture of pictures) {
+        if (picture.image.startsWith("http")) {
+          try {
+            const image = await axios.get(picture.image, {
+              responseType: "blob",
+              timeout: 2000,
+            });
+            picture.image = URL.createObjectURL(image.data);
+          } catch (error) {
+            console.log("Unable to fetch image " + picture.image);
+          }
+        }
+      }
+
+      pictures = pictures.filter(
+        (picture) =>
+          picture.image.startsWith("data") || picture.image.startsWith("blob")
       );
-      setFetching(false);
+
+      setNfts(pictures);
     }
   }, [account, isInitialized, address]);
 
   useEffect(() => {
-    setFetching(true);
+    setNfts();
+
     fetchNFTs();
   }, [fetchNFTs]);
 
-  useEffect(() => {
-    if (!fetching) {
-      setGallery(buildGallery(address, nfts.length));
+  if (typeof nfts !== "undefined") {
+    if (nfts.length === 0) {
+      return (
+        <>
+          <p>
+            This wallet does not contain any NFT, or it is not a correct wallet
+            address.
+          </p>
+          <Link to="/">Go back</Link>
+        </>
+      );
     }
-  }, [nfts, address, fetching]);
-
-  useEffect(() => {
-    if (typeof gallery !== "undefined" && !fetching) {
-      console.log(gallery, nfts);
-      setPaintings(hangPaintings(address, gallery, nfts));
-      setReady(true);
-    }
-  }, [address, gallery, nfts, fetching]);
-
-  if (ready) {
+    const gallery = buildGallery(address, nfts.length);
+    const paintings = hangPaintings(address, gallery, nfts);
     return <Scene gallery={gallery} paintings={paintings} />;
   } else {
     return null;
   }
+};
+
+const App = () => {
+  //"0xb251eF5A3d35776931805eb54C73E07B5BeC1632"
+  //"0x10a2dfb788a57587e6dead219fb2829b8ead9d7b"
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/about" element={<WelcomePage />} />
+        <Route path="/roadmap" element={<WelcomePage />} />
+        <Route path="/:address" element={<Main />} />
+      </Routes>
+    </Router>
+  );
 };
 
 export default App;

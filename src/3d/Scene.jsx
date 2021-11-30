@@ -13,8 +13,9 @@ import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
 
 const Scene = (props) => {
-  const CAMERA_HEIGHT = 30;
+  const CAMERA_HEIGHT = 35;
 
+  const { gallery, paintings } = props;
   const onRender = (scene) => {};
 
   const onSceneReady = (scene) => {
@@ -52,11 +53,11 @@ const Scene = (props) => {
     camera.ellipsoid = new Vector3(1.5, 0.5, 1.5);
     camera.checkCollisions = true;
 
-    for (const room of props.gallery) {
+    for (const room of gallery) {
       createRoomTile(room.type, room.row, room.col, scene);
     }
 
-    for (const painting of props.paintings) {
+    for (const painting of paintings) {
       drawPainting(painting, scene);
     }
 

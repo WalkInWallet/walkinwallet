@@ -1,6 +1,12 @@
 import seedrandom from "seedrandom";
 import { RoomType } from "./RoomBuilder";
-import { Vector3, SceneLoader, Mesh } from "@babylonjs/core";
+import {
+  Vector3,
+  SceneLoader,
+  Mesh,
+  PBRMetallicRoughnessMaterial,
+  Texture,
+} from "@babylonjs/core";
 
 const setupSlots = (rooms) => {
   for (const room of rooms) {
@@ -131,14 +137,18 @@ const drawPainting = (painting, scene) => {
   let rowOffset = 100 * row;
   let colOffset = 100 * col - 6;
 
+  let rotation = new Vector3(0, 0, 0);
+
   if (wall === "bottom") {
-    rowOffset -= 85.5;
+    rowOffset -= 100;
 
     if (side === 0 && hasNeighbour) {
-      colOffset -= 30;
+      colOffset -= 10;
     } else if (side === 1 && hasNeighbour) {
-      colOffset += 20;
+      colOffset += 30;
     }
+
+    rotation = new Vector3(0, Math.PI, 0);
   }
 
   if (wall === "top") {
@@ -151,29 +161,27 @@ const drawPainting = (painting, scene) => {
     }
   }
 
-  let rotation = 0;
-
   if (wall === "right") {
-    rotation = -Math.PI / 2;
+    rotation = new Vector3(0, Math.PI / 2, 0);
     rowOffset -= 46.25;
-    colOffset += 48;
+    colOffset += 60;
 
     if (side === 0 && hasNeighbour) {
-      rowOffset -= 20;
+      rowOffset -= 10;
     } else if (side === 1 && hasNeighbour) {
-      rowOffset += 30;
+      rowOffset += 35;
     }
   }
 
   if (wall === "left") {
-    rotation = Math.PI / 2;
+    rotation = new Vector3(0, -Math.PI / 2, 0);
     rowOffset -= 46.25;
-    colOffset -= 36;
+    colOffset -= 50;
 
     if (side === 0 && hasNeighbour) {
       rowOffset -= 20;
     } else if (side === 1 && hasNeighbour) {
-      rowOffset += 30;
+      rowOffset += 20;
     }
   }
 
@@ -183,10 +191,23 @@ const drawPainting = (painting, scene) => {
         mesh.material.sideOrientation = Mesh.DOUBLESIDE;
       }
 
+      if (mesh.name === "painting") {
+        const paintingMaterial = new PBRMetallicRoughnessMaterial(
+          "painting#" + painting.image,
+          scene
+        );
+        paintingMaterial.baseTexture = new Texture(painting.image);
+        paintingMaterial.metallic = 0.1;
+        paintingMaterial.roughness = 0.9;
+
+        mesh.material = paintingMaterial;
+        mesh.material.sideOrientation = Mesh.DOUBLESIDE;
+      }
+
       if (mesh.name === "__root__") {
         mesh.scaling = new Vector3(8, 8, 8);
         mesh.position = new Vector3(0 + colOffset, 30, 44 + rowOffset);
-        mesh.rotation = new Vector3(0, rotation, 0);
+        mesh.rotation = rotation;
       }
     }
   });
