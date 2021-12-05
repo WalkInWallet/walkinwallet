@@ -12,14 +12,47 @@ import {
   Route,
   useParams,
   Link,
+  useNavigate,
 } from "react-router-dom";
+import { createUseStyles } from "react-jss";
+import { Button, Progress } from "antd";
+import { LeftOutlined } from "@ant-design/icons";
+
+const useStyles = createUseStyles({
+  page: {
+    height: "100vh",
+  },
+  fullscreen: {
+    height: "100%",
+    width: "100%",
+    position: "relative",
+  },
+  controls: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+  },
+  progress: {
+    height: "100%",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
 
 const Main = (props) => {
   const { account } = useMoralisWeb3Api();
   const { address } = useParams();
 
   const { isInitialized } = useMoralis();
+  const [progress, setProgress] = useState(false);
+  const [stage, setStage] = useState("");
   const [nfts, setNfts] = useState();
+  const navigate = useNavigate();
+
+  const classes = useStyles();
 
   const fetchNFTs = useCallback(async () => {
     if (isInitialized) {
@@ -38,6 +71,9 @@ const Main = (props) => {
         }
       }
 
+      setProgress(20);
+      setStage("Collecting NFT metadata and read images");
+
       pictures = pictures
         .filter(
           (result) =>
@@ -48,16 +84,33 @@ const Main = (props) => {
           ...JSON.parse(result.metadata.replaceAll("\n", " ")),
         }));
 
+      pictures = pictures.filter(
+        (picture) =>
+          typeof picture.image !== "undefined" &&
+          !picture.image.endsWith(".gif")
+      );
+      console.log(pictures);
+
+      let downloads = 0;
       for (const picture of pictures) {
         if (picture.image.startsWith("http")) {
           try {
-            const image = await axios.get(picture.image, {
-              responseType: "blob",
-              timeout: 2000,
-            });
+            const image = await axios.get(
+              `http://localhost:3005/${picture.image}`,
+              {
+                responseType: "blob",
+                timeout: 2000,
+              }
+            );
+
             picture.image = URL.createObjectURL(image.data);
           } catch (error) {
             console.log("Unable to fetch image " + picture.image);
+          } finally {
+            downloads += 1;
+            setProgress(
+              Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100
+            );
           }
         }
       }
@@ -68,32 +121,55 @@ const Main = (props) => {
       );
 
       setNfts(pictures);
+      setStage("");
+      setProgress(100);
     }
   }, [account, isInitialized, address]);
 
   useEffect(() => {
     setNfts();
-
+    setStage("Read wallet");
+    setProgress(0);
     fetchNFTs();
   }, [fetchNFTs]);
 
   if (typeof nfts !== "undefined") {
     if (nfts.length === 0) {
       return (
-        <>
+        <div className={classes.page}>
           <p>
             This wallet does not contain any NFT, or it is not a correct wallet
             address.
           </p>
           <Link to="/">Go back</Link>
-        </>
+        </div>
       );
     }
     const gallery = buildGallery(address, nfts.length);
     const paintings = hangPaintings(address, gallery, nfts);
-    return <Scene gallery={gallery} paintings={paintings} />;
+    return (
+      <div className={classes.fullscreen}>
+        <div className={classes.controls}>
+          <Button
+            icon={<LeftOutlined />}
+            ghost
+            onClick={() => {
+              navigate("/", { replace: true });
+            }}
+          >
+            Back
+          </Button>
+        </div>
+        <Scene gallery={gallery} paintings={paintings} />
+      </div>
+    );
   } else {
-    return null;
+    return (
+      <div className={classes.progress}>
+        <p>{stage}</p>
+        <Progress type="circle" percent={progress} />
+      </div>
+    );
   }
 };
 
