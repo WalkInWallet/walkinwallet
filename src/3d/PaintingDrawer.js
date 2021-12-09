@@ -185,7 +185,14 @@ const drawPainting = (painting, scene) => {
     }
   }
 
-  SceneLoader.ImportMesh("", "/models/", "frame.glb", scene, (meshes) => {
+  const ratio = painting.width / painting.height;
+  let model = "frame.glb";
+
+  if (ratio > 0.9 && ratio < 1.1) {
+    model = "frame-square.glb";
+  }
+
+  SceneLoader.ImportMesh("", "/models/", model, scene, (meshes) => {
     for (const mesh of meshes) {
       if (mesh.material) {
         mesh.material.sideOrientation = Mesh.DOUBLESIDE;

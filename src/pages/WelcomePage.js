@@ -1,7 +1,8 @@
-import { Menu } from "antd";
+import { Menu, Button } from "antd";
 import { Link } from "react-router-dom";
 import { createUseStyles } from "react-jss";
 import Account from "../components/Account";
+import { useMoralis } from "react-moralis";
 
 const useStyles = createUseStyles({
   page: {
@@ -11,6 +12,13 @@ const useStyles = createUseStyles({
     position: "relative",
     color: "white",
     "& video": {
+      width: "100%",
+      height: "100%",
+      position: "absolute",
+      objectFit: "cover",
+      zIndex: -1,
+    },
+    "& img": {
       width: "100%",
       height: "100%",
       position: "absolute",
@@ -53,6 +61,7 @@ const useStyles = createUseStyles({
     display: "flex",
     paddingLeft: 8,
     paddingRight: 8,
+    alignItems: "center",
   },
   logo: {
     display: "flex",
@@ -80,6 +89,7 @@ const useStyles = createUseStyles({
 
 const WelcomePage = () => {
   const classes = useStyles();
+  const { logout, isAuthenticated } = useMoralis();
 
   return (
     <div className={classes.page}>
@@ -91,26 +101,37 @@ const WelcomePage = () => {
         <div className={classes.space} />
         <div className={classes.menu}>
           <Menu mode="horizontal">
-            <Menu.Item key="/about">
+            <Menu.Item disabled key="/about">
               <Link to="/about">About</Link>
             </Menu.Item>
-            <Menu.Item key="/roadmap">
+            <Menu.Item disabled key="/roadmap">
               <Link to="/roadmap">Roadmap</Link>
             </Menu.Item>
           </Menu>
         </div>
+        {isAuthenticated && (
+          <Button
+            className={classes.button}
+            onClick={() => {
+              logout();
+            }}
+          >
+            Logout
+          </Button>
+        )}
       </div>
 
-      <video loop autoPlay muted>
+      {/* <video loop autoPlay muted>
         <source src="./videos/walkinwallet.mp4" type="video/mp4" />
-      </video>
+      </video> */}
+      <img src="background.png" alt="preview of a 3d wallet" />
 
       <div className={classes.content}>
         <h1>Let's walk in wallet</h1>
         <Account />
         <p className={classes.subtitle}>
-          WalkInWallet will create a 3D gallery from the NFT's stored within the
-          given wallet on Binance Smart Chain, Ethereum Mainnet and Polygon
+          WalkInWallet will create a 3D gallery from the NFT's stored within
+          your wallet on Binance Smart Chain, Ethereum Mainnet and Polygon
           Network.
         </p>
       </div>

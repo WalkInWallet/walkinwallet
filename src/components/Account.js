@@ -1,7 +1,7 @@
 import { useMoralis } from "react-moralis";
 
 import { Button, Skeleton } from "antd";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Blockies from "react-blockies";
 import { createUseStyles } from "react-jss";
@@ -34,8 +34,6 @@ const useStyles = createUseStyles({
 const Blockie = (props) => {
   const { account } = useMoralis();
 
-  console.log(account);
-
   if (!props.address && !account) return <Skeleton.Avatar active size={40} />;
 
   return (
@@ -55,25 +53,18 @@ const Account = () => {
   const {
     authenticate,
     isAuthenticated,
-    logout,
     account,
     enableWeb3,
     isWeb3Enabled,
     isWeb3EnableLoading,
   } = useMoralis();
 
-  const [address, setAddress] = useState();
   const classes = useStyles();
   const navigate = useNavigate();
 
-  console.log(isAuthenticated, account);
   useEffect(() => {
     if (isAuthenticated && !isWeb3Enabled && !isWeb3EnableLoading) enableWeb3();
   }, [isAuthenticated, isWeb3EnableLoading, isWeb3Enabled, enableWeb3]);
-
-  useEffect(() => {
-    setAddress(account);
-  }, [account]);
 
   if (!isAuthenticated) {
     return (
@@ -82,7 +73,10 @@ const Account = () => {
         className={classes.button}
         ghost
         onClick={() =>
-          authenticate({ signingMessage: "Welcome to walkinwallet!" })
+          authenticate({
+            signingMessage:
+              "Welcome to Walk in wallet! This a client webapp which does not store any account data online or offline. We wish you a lot of fun while walking! :)",
+          })
         }
       >
         Connect with MetaMask
@@ -90,7 +84,7 @@ const Account = () => {
     );
   }
 
-  const getEllipsisTxt = (str, n = 4) => {
+  const getEllipsisTxt = (str, n = 6) => {
     if (str) {
       return `${str.slice(0, n)}...${str.slice(str.length - n)}`;
     }
@@ -106,20 +100,10 @@ const Account = () => {
           ghost
           icon={<Blockie currentWallet scale={3} />}
           onClick={() => {
-            navigate(`/${address}`, { replace: true });
+            navigate(`/gallery`, { replace: true });
           }}
         >
-          {`Visit ${getEllipsisTxt(account)}`}
-        </Button>
-        <Button
-          size="large"
-          className={classes.button}
-          ghost
-          onClick={() => {
-            logout();
-          }}
-        >
-          Disconnect Wallet
+          {`${getEllipsisTxt(account)}`}
         </Button>
       </div>
     </>

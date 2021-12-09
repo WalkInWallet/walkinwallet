@@ -10,7 +10,6 @@ import {
   HashRouter as Router,
   Routes,
   Route,
-  useParams,
   Link,
   useNavigate,
 } from "react-router-dom";
@@ -44,7 +43,7 @@ const useStyles = createUseStyles({
 
 const Main = (props) => {
   const { account } = useMoralisWeb3Api();
-  const { address } = useParams();
+  const { account: address } = useMoralis();
 
   const { isInitialized } = useMoralis();
   const [progress, setProgress] = useState(false);
@@ -54,8 +53,15 @@ const Main = (props) => {
 
   const classes = useStyles();
 
+  const loadImage = (image, blob) =>
+    new Promise((resolve, reject) => {
+      image.addEventListener("load", () => resolve(image));
+      image.addEventListener("error", (error) => reject(error));
+      image.src = blob;
+    });
+
   const fetchNFTs = useCallback(async () => {
-    if (isInitialized) {
+    if (isInitialized && address) {
       let pictures = [];
 
       for (const network of ["eth", "polygon", "bsc"]) {
@@ -74,6 +80,18 @@ const Main = (props) => {
       setProgress(20);
       setStage("Collecting NFT metadata and read images");
 
+      for (const picture of pictures) {
+        if (picture.metadata === null && picture.token_uri !== null) {
+          try {
+            picture.metadata = JSON.stringify(
+              (await axios.get(picture.token_uri)).data
+            );
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      }
+
       pictures = pictures
         .filter(
           (result) =>
@@ -89,21 +107,30 @@ const Main = (props) => {
           typeof picture.image !== "undefined" &&
           !picture.image.endsWith(".gif")
       );
-      console.log(pictures);
 
       let downloads = 0;
       for (const picture of pictures) {
         if (picture.image.startsWith("http")) {
           try {
             const image = await axios.get(
-              `http://localhost:3005/${picture.image}`,
+              `https://walkinwallet.herokuapp.com/${picture.image}`,
               {
                 responseType: "blob",
-                timeout: 2000,
+                timeout: 6000,
               }
             );
 
             picture.image = URL.createObjectURL(image.data);
+
+            const htmlImage = document.createElement("img");
+
+            htmlImage.src = picture.image;
+            await loadImage(htmlImage, picture.image);
+
+            picture.width = htmlImage.naturalWidth;
+            picture.height = htmlImage.naturalHeight;
+
+            htmlImage.remove();
           } catch (error) {
             console.log("Unable to fetch image " + picture.image);
           } finally {
@@ -134,7 +161,14 @@ const Main = (props) => {
   }, [fetchNFTs]);
 
   if (typeof nfts !== "undefined") {
-    if (nfts.length === 0) {
+    if (!address) {
+      return (
+        <div className={classes.page}>
+          <p>Please login to start walking</p>
+          <Link to="/">Go back</Link>
+        </div>
+      );
+    } else if (nfts.length === 0) {
       return (
         <div className={classes.page}>
           <p>
@@ -174,16 +208,13 @@ const Main = (props) => {
 };
 
 const App = () => {
-  //"0xb251eF5A3d35776931805eb54C73E07B5BeC1632"
-  //"0x10a2dfb788a57587e6dead219fb2829b8ead9d7b"
-
   return (
     <Router>
       <Routes>
         <Route path="/" element={<WelcomePage />} />
         <Route path="/about" element={<WelcomePage />} />
         <Route path="/roadmap" element={<WelcomePage />} />
-        <Route path="/:address" element={<Main />} />
+        <Route path="/gallery" element={<Main />} />
       </Routes>
     </Router>
   );
