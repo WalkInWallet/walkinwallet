@@ -61,6 +61,7 @@ const Main = (props) => {
     });
 
   const fetchNFTs = useCallback(async () => {
+    console.log(isInitialized, address);
     if (isInitialized && address) {
       let pictures = [];
 
@@ -102,25 +103,50 @@ const Main = (props) => {
           ...JSON.parse(result.metadata.replaceAll("\n", " ")),
         }));
 
+      for (let i = 0; i < pictures.length; i++) {
+        if (
+          typeof pictures[i].image === "undefined" &&
+          pictures[i].hasOwnProperty("data")
+        ) {
+          pictures[i] = { ...pictures[i], ...pictures[i].data };
+        }
+      }
+
       pictures = pictures.filter(
         (picture) =>
           typeof picture.image !== "undefined" &&
           !picture.image.endsWith(".gif")
       );
 
+      const fetchImage = async (url, withCorsProxy) => {
+        let location = url;
+        if (withCorsProxy) {
+          location = `https://walkinwallet.herokuapp.com/${url}`;
+        }
+
+        try {
+          const image = await axios.get(location, {
+            responseType: "blob",
+            timeout: 6000,
+          });
+          return image.data;
+        } catch (error) {
+          console.log(error);
+          return null;
+        }
+      };
+
       let downloads = 0;
       for (const picture of pictures) {
         if (picture.image.startsWith("http")) {
-          try {
-            const image = await axios.get(
-              `https://walkinwallet.herokuapp.com/${picture.image}`,
-              {
-                responseType: "blob",
-                timeout: 6000,
-              }
-            );
+          let image = await fetchImage(picture.image, false);
 
-            picture.image = URL.createObjectURL(image.data);
+          if (image === null) {
+            image = await fetchImage(picture.image, true);
+          }
+
+          if (image !== null) {
+            picture.image = URL.createObjectURL(image);
 
             const htmlImage = document.createElement("img");
 
@@ -131,14 +157,14 @@ const Main = (props) => {
             picture.height = htmlImage.naturalHeight;
 
             htmlImage.remove();
-          } catch (error) {
+          } else {
             console.log("Unable to fetch image " + picture.image);
-          } finally {
-            downloads += 1;
-            setProgress(
-              Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100
-            );
           }
+
+          downloads += 1;
+          setProgress(
+            Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100
+          );
         }
       }
 
@@ -208,6 +234,13 @@ const Main = (props) => {
 };
 
 const App = () => {
+  const { enableWeb3, isAuthenticated, isWeb3Enabled, isWeb3EnableLoading } =
+    useMoralis();
+
+  useEffect(() => {
+    if (isAuthenticated && !isWeb3Enabled && !isWeb3EnableLoading) enableWeb3();
+  }, [isAuthenticated, isWeb3EnableLoading, isWeb3Enabled, enableWeb3]);
+
   return (
     <Router>
       <Routes>

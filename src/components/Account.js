@@ -1,7 +1,6 @@
 import { useMoralis } from "react-moralis";
 
 import { Button, Skeleton } from "antd";
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Blockies from "react-blockies";
 import { createUseStyles } from "react-jss";
@@ -50,21 +49,10 @@ const Blockie = (props) => {
 };
 
 const Account = () => {
-  const {
-    authenticate,
-    isAuthenticated,
-    account,
-    enableWeb3,
-    isWeb3Enabled,
-    isWeb3EnableLoading,
-  } = useMoralis();
+  const { authenticate, isAuthenticated, account } = useMoralis();
 
   const classes = useStyles();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isAuthenticated && !isWeb3Enabled && !isWeb3EnableLoading) enableWeb3();
-  }, [isAuthenticated, isWeb3EnableLoading, isWeb3Enabled, enableWeb3]);
 
   if (!isAuthenticated) {
     return (
