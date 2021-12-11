@@ -5,25 +5,57 @@ import {
   HemisphericLight,
   PointLight,
   Light,
+  TouchCamera,
 } from "@babylonjs/core";
 
 import SceneComponent from "babylonjs-hook";
 import "@babylonjs/loaders/glTF";
 import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
+import { useEffect, useState } from "react";
 
 const Scene = (props) => {
   const CAMERA_HEIGHT = 35;
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    let hasTouchScreen = false;
+    if ("maxTouchPoints" in navigator) {
+      hasTouchScreen = navigator.maxTouchPoints > 0;
+    } else if ("msMaxTouchPoints" in navigator) {
+      hasTouchScreen = navigator.msMaxTouchPoints > 0;
+    } else {
+      const mediaQuery = window.matchMedia && matchMedia("(pointer:coarse)");
+      if (mediaQuery && mediaQuery.media === "(pointer:coarse)") {
+        hasTouchScreen = !!mediaQuery.matches;
+      } else if ("orientation" in window) {
+        hasTouchScreen = true;
+      } else {
+        const userAgent = navigator.userAgent;
+        hasTouchScreen =
+          /\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(userAgent) ||
+          /\b(Android|Windows Phone|iPad|iPod)\b/i.test(userAgent);
+      }
+    }
+
+    if (hasTouchScreen) {
+      setIsMobile(true);
+    } else {
+      setIsMobile(false);
+    }
+  }, []);
 
   const { gallery, paintings } = props;
   const onRender = (scene) => {};
 
   const onSceneReady = (scene) => {
-    const camera = new UniversalCamera(
-      "MainCamera",
-      new Vector3(0, 3, 0),
-      scene
-    );
+    let camera;
+    if (isMobile) {
+      camera = new UniversalCamera("MainCamera", new Vector3(0, 3, 0), scene);
+    } else {
+      camera = new TouchCamera("MainCamera", new Vector3(0, 3, 0), scene);
+    }
     const canvas = scene.getEngine().getRenderingCanvas();
 
     camera.setTarget(
@@ -36,15 +68,41 @@ const Scene = (props) => {
     camera.wheelDeltaPercentage = 0.01;
     camera.attachControl(canvas, true);
 
-    const W_KEY = 87;
-    const A_KEY = 65;
-    const S_KEY = 83;
-    const D_KEY = 68;
+    if (isMobile) {
+      camera.keysUp = [];
+      camera.keysLeft = [];
+      camera.keysDown = [];
+      camera.keysRight = [];
+    } else {
+      const W_KEY = 87;
+      const UP_KEY = 38;
+      const A_KEY = 65;
+      const LEFT_KEY = 37;
+      const S_KEY = 83;
+      const DOWN_KEY = 40;
+      const D_KEY = 68;
+      const RIGHT_KEY = 39;
 
-    camera.keysUp.push(W_KEY);
-    camera.keysLeft.push(A_KEY);
-    camera.keysDown.push(S_KEY);
-    camera.keysRight.push(D_KEY);
+      camera.keysUp = [W_KEY, UP_KEY];
+      camera.keysLeft = [A_KEY, LEFT_KEY];
+      camera.keysDown = [S_KEY, DOWN_KEY];
+      camera.keysRight = [D_KEY, RIGHT_KEY];
+
+      canvas.addEventListener(
+        "click",
+        () => {
+          canvas.requestPointerLock =
+            canvas.requestPointerLock ||
+            canvas.msRequestPointerLock ||
+            canvas.mozRequestPointerLock ||
+            canvas.webkitRequestPointerLock;
+          if (canvas.requestPointerLock) {
+            canvas.requestPointerLock();
+          }
+        },
+        false
+      );
+    }
 
     camera.speed = 20;
     camera.fov = 0.8;
@@ -80,21 +138,6 @@ const Scene = (props) => {
       pointLight.position.x = camera.position.x;
       pointLight.position.z = camera.position.z;
     });
-
-    canvas.addEventListener(
-      "click",
-      () => {
-        canvas.requestPointerLock =
-          canvas.requestPointerLock ||
-          canvas.msRequestPointerLock ||
-          canvas.mozRequestPointerLock ||
-          canvas.webkitRequestPointerLock;
-        if (canvas.requestPointerLock) {
-          canvas.requestPointerLock();
-        }
-      },
-      false
-    );
   };
 
   return (
