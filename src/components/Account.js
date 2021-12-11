@@ -60,12 +60,20 @@ const Account = () => {
         size="large"
         className={classes.button}
         ghost
-        onClick={() =>
-          authenticate({
-            signingMessage:
-              "Welcome to Walk in wallet! This a client webapp which does not store any account data online or offline. We wish you a lot of fun while walking! :)",
-          })
-        }
+        onClick={() => {
+          if (typeof window.ethereum !== "undefined") {
+            authenticate({
+              signingMessage:
+                "Welcome to Walk in wallet! This a client webapp which does not store any account data online or offline. We wish you a lot of fun while walking! :)",
+            });
+          } else {
+            authenticate({
+              provider: "walletconnect",
+              signingMessage:
+                "Welcome to Walk in wallet! This a client webapp which does not store any account data online or offline. We wish you a lot of fun while walking! :)",
+            });
+          }
+        }}
       >
         Connect with MetaMask
       </Button>

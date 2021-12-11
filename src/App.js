@@ -238,7 +238,13 @@ const App = () => {
     useMoralis();
 
   useEffect(() => {
-    if (isAuthenticated && !isWeb3Enabled && !isWeb3EnableLoading) enableWeb3();
+    if (isAuthenticated && !isWeb3Enabled && !isWeb3EnableLoading) {
+      if (typeof window.ethereum === "undefined") {
+        enableWeb3({ provider: "walletconnect" });
+      } else {
+        enableWeb3();
+      }
+    }
   }, [isAuthenticated, isWeb3EnableLoading, isWeb3Enabled, enableWeb3]);
 
   return (
