@@ -43,7 +43,7 @@ const useStyles = createUseStyles({
 
 const Main = (props) => {
   const { account } = useMoralisWeb3Api();
-  const { account: address } = useMoralis();
+  const { user } = useMoralis();
 
   const { isInitialized } = useMoralis();
   const [progress, setProgress] = useState(false);
@@ -61,15 +61,19 @@ const Main = (props) => {
     });
 
   const fetchNFTs = useCallback(async () => {
-    console.log(isInitialized, address);
-    if (isInitialized && address) {
+    if (
+      isInitialized &&
+      user &&
+      user.attributes &&
+      user.attributes.ethAddress
+    ) {
       let pictures = [];
 
       for (const network of ["eth", "polygon", "bsc"]) {
         try {
           const response = await account.getNFTs({
             chain: network,
-            address: address,
+            address: user.attributes.ethAddress,
             limit: 200,
           });
           pictures = [...pictures, ...response.result];
@@ -177,7 +181,7 @@ const Main = (props) => {
       setStage("");
       setProgress(100);
     }
-  }, [account, isInitialized, address]);
+  }, [account, isInitialized, user]);
 
   useEffect(() => {
     setNfts();
@@ -187,7 +191,7 @@ const Main = (props) => {
   }, [fetchNFTs]);
 
   if (typeof nfts !== "undefined") {
-    if (!address) {
+    if (!user || !user.attributes || !user.attributes.ethAddress) {
       return (
         <div className={classes.page}>
           <p>Please login to start walking</p>
@@ -205,8 +209,8 @@ const Main = (props) => {
         </div>
       );
     }
-    const gallery = buildGallery(address, nfts.length);
-    const paintings = hangPaintings(address, gallery, nfts);
+    const gallery = buildGallery(user.attributes.ethAddress, nfts.length);
+    const paintings = hangPaintings(user.attributes.ethAddress, gallery, nfts);
     return (
       <div className={classes.fullscreen}>
         <div className={classes.controls}>

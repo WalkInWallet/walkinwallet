@@ -31,15 +31,19 @@ const useStyles = createUseStyles({
 });
 
 const Blockie = (props) => {
-  const { account } = useMoralis();
+  const { user } = useMoralis();
 
-  if (!props.address && !account) return <Skeleton.Avatar active size={40} />;
+  if (
+    !props.address &&
+    (!user || !user.attributes || !user.attributes.ethAddress)
+  )
+    return <Skeleton.Avatar active size={40} />;
 
   return (
     <Blockies
       seed={
         props.currentWallet
-          ? account.toLowerCase()
+          ? user.attributes.ethAddress.toLowerCase()
           : props.address.toLowerCase()
       }
       className="identicon"
@@ -49,7 +53,7 @@ const Blockie = (props) => {
 };
 
 const Account = () => {
-  const { authenticate, isAuthenticated, account } = useMoralis();
+  const { authenticate, isAuthenticated, user } = useMoralis();
 
   const classes = useStyles();
   const navigate = useNavigate();
@@ -99,7 +103,7 @@ const Account = () => {
             navigate(`/gallery`, { replace: true });
           }}
         >
-          {`${getEllipsisTxt(account)}`}
+          {`${getEllipsisTxt(user.attributes.ethAddress)}`}
         </Button>
       </div>
     </>

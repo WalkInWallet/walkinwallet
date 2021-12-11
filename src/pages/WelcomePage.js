@@ -124,7 +124,11 @@ const WelcomePage = () => {
       {/* <video loop autoPlay muted>
         <source src="./videos/walkinwallet.mp4" type="video/mp4" />
       </video> */}
-      <img src="background.png" alt="preview of a 3d wallet" />
+      <img
+        style={{ backgroundColor: "#909dad" }}
+        src="background.png"
+        alt="preview of a 3d wallet"
+      />
 
       <div className={classes.content}>
         <h1>Let's walk in wallet</h1>
