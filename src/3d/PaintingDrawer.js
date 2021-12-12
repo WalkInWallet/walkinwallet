@@ -215,6 +215,7 @@ const drawPainting = (painting, scene) => {
         mesh.scaling = new Vector3(8, 8, 8);
         mesh.position = new Vector3(0 + colOffset, 30, 44 + rowOffset);
         mesh.rotation = rotation;
+        mesh.name = `${row}.${col}.${wall}.${side}`;
       }
     }
   });

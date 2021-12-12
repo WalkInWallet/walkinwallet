@@ -108,8 +108,47 @@ const Scene = (props) => {
       createRoomTile(room.type, room.row, room.col, scene);
     }
 
+    let paintingNextToCamera;
+
     for (const painting of paintings) {
       drawPainting(painting, scene);
+
+      if (paintingNextToCamera) {
+        if (
+          painting.position.row + painting.position.col <
+          paintingNextToCamera.position.row + paintingNextToCamera.position.col
+        ) {
+          paintingNextToCamera = painting;
+        }
+      } else {
+        paintingNextToCamera = painting;
+      }
+    }
+
+    if (paintingNextToCamera) {
+      const { row, col, wall } = paintingNextToCamera.position;
+      let rowOffset = 100 * row;
+      let colOffset = 100 * col - 6;
+
+      if (wall === "bottom") {
+        rowOffset -= 100;
+      }
+
+      if (wall === "top") {
+        rowOffset += 10;
+      }
+
+      if (wall === "right") {
+        rowOffset -= 46.25;
+        colOffset += 60;
+      }
+
+      if (wall === "left") {
+        rowOffset -= 46.25;
+        colOffset -= 50;
+      }
+
+      camera.setTarget(new Vector3(0 + colOffset, 30, 44 + rowOffset));
     }
 
     const light = new HemisphericLight(
