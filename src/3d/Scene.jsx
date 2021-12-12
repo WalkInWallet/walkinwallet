@@ -6,15 +6,36 @@ import {
   PointLight,
   Light,
   TouchCamera,
+  MeshBuilder,
 } from "@babylonjs/core";
 
 import SceneComponent from "babylonjs-hook";
 import "@babylonjs/loaders/glTF";
 import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
+import { useState } from "react";
+import { createUseStyles } from "react-jss";
+
+const useStyles = createUseStyles({
+  fullscreen: {
+    height: "100%",
+    width: "100%",
+  },
+  hud: {
+    bottom: 0,
+    height: "fit-content",
+    position: "absolute",
+    padding: 16,
+    color: "white",
+    background: "rgba(0,0,0,0.65)",
+  },
+});
 
 const Scene = (props) => {
   const CAMERA_HEIGHT = 35;
+  const [hudDisplayVisible, setHudDisplayVisible] = useState(false);
+  const [hudInfos, setHudInfos] = useState({});
+  const classes = useStyles();
 
   const { gallery, paintings } = props;
   const onRender = (scene) => {};
@@ -109,9 +130,17 @@ const Scene = (props) => {
     }
 
     let paintingNextToCamera;
+    const collider = MeshBuilder.CreateBox(
+      "collider",
+      { width: 20, depth: 40, height: 20 },
+      scene
+    );
+    collider.parent = camera;
+    collider.visibility = 0;
+    collider.position = new Vector3(0, 10, 35);
 
     for (const painting of paintings) {
-      drawPainting(painting, scene);
+      drawPainting(painting, scene, setHudDisplayVisible, setHudInfos);
 
       if (paintingNextToCamera) {
         if (
@@ -173,16 +202,30 @@ const Scene = (props) => {
   };
 
   return (
-    <SceneComponent
-      antialias
-      onSceneReady={onSceneReady}
-      onRender={onRender}
-      id="babylonjs-canvas"
-      style={{
-        width: "100%",
-        height: "100%",
-      }}
-    />
+    <div className={classes.fullscreen} style={{ position: "relative" }}>
+      <SceneComponent
+        antialias
+        onSceneReady={onSceneReady}
+        onRender={onRender}
+        id="babylonjs-canvas"
+        className={classes.fullscreen}
+      />
+      <div
+        className={classes.hud}
+        style={{
+          display: hudDisplayVisible ? "block" : "none",
+        }}
+      >
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href={hudInfos.external_url}
+        >
+          {hudInfos.name}
+        </a>
+        <p>{hudInfos.description}</p>
+      </div>
+    </div>
   );
 };
 

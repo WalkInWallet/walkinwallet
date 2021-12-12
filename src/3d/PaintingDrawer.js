@@ -6,6 +6,8 @@ import {
   Mesh,
   PBRMetallicRoughnessMaterial,
   Texture,
+  ExecuteCodeAction,
+  ActionManager,
 } from "@babylonjs/core";
 
 const setupSlots = (rooms) => {
@@ -132,7 +134,7 @@ const hangPaintings = (hash, rooms, paintings) => {
   return paintings;
 };
 
-const drawPainting = (painting, scene) => {
+const drawPainting = (painting, scene, setHudDisplayVisible, setHudInfos) => {
   const { row, col, wall, side, hasNeighbour } = painting.position;
   let rowOffset = 100 * row;
   let colOffset = 100 * col - 6;
@@ -208,7 +210,33 @@ const drawPainting = (painting, scene) => {
         paintingMaterial.roughness = 0.9;
 
         mesh.material = paintingMaterial;
-        mesh.material.sideOrientation = Mesh.DOUBLESIDE;
+        mesh.material.sideOrientation = Mesh.BACKSIDE;
+
+        mesh.actionManager = new ActionManager(scene);
+        const enterAction = new ExecuteCodeAction(
+          {
+            trigger: ActionManager.OnIntersectionEnterTrigger,
+            parameter: { mesh: scene.getMeshByName("collider") },
+          },
+          () => {
+            setHudDisplayVisible(true);
+            setHudInfos({
+              ...painting,
+            });
+          }
+        );
+        const exitAction = new ExecuteCodeAction(
+          {
+            trigger: ActionManager.OnIntersectionExitTrigger,
+            parameter: { mesh: scene.getMeshByName("collider") },
+          },
+          () => {
+            setHudDisplayVisible(false);
+            setHudInfos({});
+          }
+        );
+        mesh.actionManager.registerAction(enterAction);
+        mesh.actionManager.registerAction(exitAction);
       }
 
       if (mesh.name === "__root__") {
