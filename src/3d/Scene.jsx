@@ -12,14 +12,16 @@ import SceneComponent from "babylonjs-hook";
 import "@babylonjs/loaders/glTF";
 import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
-import { useEffect, useState } from "react";
 
 const Scene = (props) => {
   const CAMERA_HEIGHT = 35;
 
-  const [isMobile, setIsMobile] = useState(false);
+  const { gallery, paintings } = props;
+  const onRender = (scene) => {};
 
-  useEffect(() => {
+  const onSceneReady = (scene) => {
+    let camera;
+
     let hasTouchScreen = false;
     if ("maxTouchPoints" in navigator) {
       hasTouchScreen = navigator.maxTouchPoints > 0;
@@ -40,21 +42,9 @@ const Scene = (props) => {
     }
 
     if (hasTouchScreen) {
-      setIsMobile(true);
-    } else {
-      setIsMobile(false);
-    }
-  }, []);
-
-  const { gallery, paintings } = props;
-  const onRender = (scene) => {};
-
-  const onSceneReady = (scene) => {
-    let camera;
-    if (isMobile) {
-      camera = new UniversalCamera("MainCamera", new Vector3(0, 3, 0), scene);
-    } else {
       camera = new TouchCamera("MainCamera", new Vector3(0, 3, 0), scene);
+    } else {
+      camera = new UniversalCamera("MainCamera", new Vector3(0, 3, 0), scene);
     }
     const canvas = scene.getEngine().getRenderingCanvas();
 
@@ -68,12 +58,16 @@ const Scene = (props) => {
     camera.wheelDeltaPercentage = 0.01;
     camera.attachControl(canvas, true);
 
-    if (isMobile) {
+    if (hasTouchScreen) {
       camera.keysUp = [];
       camera.keysLeft = [];
       camera.keysDown = [];
       camera.keysRight = [];
+      camera.speed = 40;
+      camera.touchAngularSensibility = 10000;
+      camera.touchMoveSensibility = 200;
     } else {
+      camera.speed = 20;
       const W_KEY = 87;
       const UP_KEY = 38;
       const A_KEY = 65;
@@ -104,7 +98,6 @@ const Scene = (props) => {
       );
     }
 
-    camera.speed = 20;
     camera.fov = 0.8;
     camera.inertia = 0;
 
