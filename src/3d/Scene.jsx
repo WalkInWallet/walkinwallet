@@ -15,11 +15,20 @@ import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
 import { useState } from "react";
 import { createUseStyles } from "react-jss";
+import { Button } from "antd";
+import { LeftOutlined } from "@ant-design/icons";
+
+import { useNavigate } from "react-router-dom";
 
 const useStyles = createUseStyles({
   fullscreen: {
     height: "100%",
     width: "100%",
+  },
+  controls: {
+    position: "absolute",
+    top: 8,
+    left: 8,
   },
   hud: {
     bottom: 0,
@@ -37,6 +46,7 @@ const Scene = (props) => {
   const [hudInfos, setHudInfos] = useState({});
   const classes = useStyles();
 
+  const navigate = useNavigate();
   const { gallery, paintings } = props;
   const onRender = (scene) => {};
 
@@ -203,6 +213,17 @@ const Scene = (props) => {
 
   return (
     <div className={classes.fullscreen} style={{ position: "relative" }}>
+      <div className={classes.controls}>
+        <Button
+          icon={<LeftOutlined />}
+          ghost
+          onClick={() => {
+            navigate("/", { replace: true });
+          }}
+        >
+          Back
+        </Button>
+      </div>
       <SceneComponent
         antialias
         onSceneReady={onSceneReady}

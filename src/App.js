@@ -6,16 +6,9 @@ import { hangPaintings } from "./3d/PaintingDrawer";
 import Scene from "./3d/Scene";
 import "./App.css";
 import WelcomePage from "./pages/WelcomePage";
-import {
-  HashRouter as Router,
-  Routes,
-  Route,
-  Link,
-  useNavigate,
-} from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { createUseStyles } from "react-jss";
-import { Button, Progress } from "antd";
-import { LeftOutlined } from "@ant-design/icons";
+import { Progress } from "antd";
 
 const useStyles = createUseStyles({
   page: {
@@ -25,11 +18,6 @@ const useStyles = createUseStyles({
     height: "100%",
     width: "100%",
     position: "relative",
-  },
-  controls: {
-    position: "absolute",
-    top: 8,
-    left: 8,
   },
   progress: {
     height: "100%",
@@ -49,7 +37,6 @@ const Main = (props) => {
   const [progress, setProgress] = useState(false);
   const [stage, setStage] = useState("");
   const [nfts, setNfts] = useState();
-  const navigate = useNavigate();
 
   const classes = useStyles();
 
@@ -213,17 +200,6 @@ const Main = (props) => {
     const paintings = hangPaintings(user.attributes.ethAddress, gallery, nfts);
     return (
       <div className={classes.fullscreen}>
-        <div className={classes.controls}>
-          <Button
-            icon={<LeftOutlined />}
-            ghost
-            onClick={() => {
-              navigate("/", { replace: true });
-            }}
-          >
-            Back
-          </Button>
-        </div>
         <Scene gallery={gallery} paintings={paintings} />
       </div>
     );

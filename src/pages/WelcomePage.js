@@ -140,7 +140,10 @@ const WelcomePage = () => {
         </p>
       </div>
       <footer className={classes.footer}>
-        <p>Created by Fabian Bormann ©2021</p>
+        <p>
+          Created by{" "}
+          <a href="mailto:contact@walkinwallet.com">Fabian Bormann</a> ©2021{" "}
+        </p>
       </footer>
     </div>
   );
