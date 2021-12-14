@@ -6,13 +6,24 @@ import { hangPaintings } from "./3d/PaintingDrawer";
 import Scene from "./3d/Scene";
 import "./App.css";
 import WelcomePage from "./pages/WelcomePage";
-import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
+import {
+  HashRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useParams,
+} from "react-router-dom";
 import { createUseStyles } from "react-jss";
-import { Progress } from "antd";
+import { message, Progress } from "antd";
 
 const useStyles = createUseStyles({
   page: {
-    height: "100vh",
+    height: "100%",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
   },
   fullscreen: {
     height: "100%",
@@ -35,8 +46,11 @@ const Main = (props) => {
 
   const { isInitialized } = useMoralis();
   const [progress, setProgress] = useState(false);
+  const [hasViewPermissions, setHasViewPermissions] = useState(false);
+  const [requestedPermissions, setRequestedPermissions] = useState(false);
   const [stage, setStage] = useState("");
   const [nfts, setNfts] = useState();
+  const { address } = useParams();
 
   const classes = useStyles();
 
@@ -48,144 +62,173 @@ const Main = (props) => {
     });
 
   const fetchNFTs = useCallback(async () => {
+    let pictures = [];
+
+    for (const network of ["eth", "polygon", "bsc"]) {
+      try {
+        const response = await account.getNFTs({
+          chain: network,
+          address: address,
+          limit: 200,
+        });
+        pictures = [...pictures, ...response.result];
+      } catch (error) {
+        console.warn(`Failed to fetch NFTs from ${network} network`);
+      }
+    }
+
+    setProgress(20);
+    setStage("Collecting NFT metadata and read images");
+
+    for (const picture of pictures) {
+      if (picture.metadata === null && picture.token_uri !== null) {
+        try {
+          picture.metadata = JSON.stringify(
+            (await axios.get(picture.token_uri)).data
+          );
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    }
+
+    pictures = pictures
+      .filter(
+        (result) =>
+          typeof result.metadata !== "undefined" && result.metadata !== null
+      )
+      .map((result) => ({
+        ...result,
+        ...JSON.parse(result.metadata.replaceAll("\n", " ")),
+      }));
+
+    for (let i = 0; i < pictures.length; i++) {
+      if (
+        typeof pictures[i].image === "undefined" &&
+        pictures[i].hasOwnProperty("data")
+      ) {
+        pictures[i] = { ...pictures[i], ...pictures[i].data };
+      }
+    }
+
+    pictures = pictures.filter(
+      (picture) =>
+        typeof picture.image !== "undefined" && !picture.image.endsWith(".gif")
+    );
+
+    const fetchImage = async (url, withCorsProxy) => {
+      let location = url;
+      if (withCorsProxy) {
+        location = `https://walkinwallet.herokuapp.com/${url}`;
+      }
+
+      try {
+        const image = await axios.get(location, {
+          responseType: "blob",
+          timeout: 6000,
+        });
+        return image.data;
+      } catch (error) {
+        console.log(error);
+        return null;
+      }
+    };
+
+    let downloads = 0;
+    for (const picture of pictures) {
+      if (picture.image.startsWith("http")) {
+        let image = await fetchImage(picture.image, false);
+
+        if (image === null) {
+          image = await fetchImage(picture.image, true);
+        }
+
+        if (image !== null) {
+          picture.image = URL.createObjectURL(image);
+
+          const htmlImage = document.createElement("img");
+
+          htmlImage.src = picture.image;
+          await loadImage(htmlImage, picture.image);
+
+          picture.width = htmlImage.naturalWidth;
+          picture.height = htmlImage.naturalHeight;
+
+          htmlImage.remove();
+        } else {
+          console.log("Unable to fetch image " + picture.image);
+        }
+
+        downloads += 1;
+        setProgress(
+          Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100
+        );
+      }
+    }
+
+    pictures = pictures.filter(
+      (picture) =>
+        picture.image.startsWith("data") || picture.image.startsWith("blob")
+    );
+
+    setNfts(pictures);
+    setStage("");
+    setProgress(100);
+  }, [account, address]);
+
+  useEffect(() => {
+    if (hasViewPermissions) {
+      setNfts();
+      setStage("Read wallet");
+      setProgress(0);
+      fetchNFTs();
+    }
+  }, [fetchNFTs, address, hasViewPermissions, isInitialized]);
+
+  useEffect(() => {
     if (
       isInitialized &&
       user &&
       user.attributes &&
-      user.attributes.ethAddress
+      user.attributes.ethAddress &&
+      user.attributes.ethAddress.toLowerCase() === address.toLowerCase()
     ) {
-      let pictures = [];
-
-      for (const network of ["eth", "polygon", "bsc"]) {
-        try {
-          const response = await account.getNFTs({
-            chain: network,
-            address: user.attributes.ethAddress,
-            limit: 200,
-          });
-          pictures = [...pictures, ...response.result];
-        } catch (error) {
-          console.warn(`Failed to fetch NFTs from ${network} network`);
-        }
-      }
-
-      setProgress(20);
-      setStage("Collecting NFT metadata and read images");
-
-      for (const picture of pictures) {
-        if (picture.metadata === null && picture.token_uri !== null) {
-          try {
-            picture.metadata = JSON.stringify(
-              (await axios.get(picture.token_uri)).data
-            );
-          } catch (error) {
-            console.log(error);
-          }
-        }
-      }
-
-      pictures = pictures
-        .filter(
-          (result) =>
-            typeof result.metadata !== "undefined" && result.metadata !== null
+      setHasViewPermissions(true);
+    } else if (isInitialized) {
+      setRequestedPermissions(false);
+      axios
+        .get(
+          `https://us-central1-walkinwallet.cloudfunctions.net/api/check/${address}`
         )
-        .map((result) => ({
-          ...result,
-          ...JSON.parse(result.metadata.replaceAll("\n", " ")),
-        }));
-
-      for (let i = 0; i < pictures.length; i++) {
-        if (
-          typeof pictures[i].image === "undefined" &&
-          pictures[i].hasOwnProperty("data")
-        ) {
-          pictures[i] = { ...pictures[i], ...pictures[i].data };
-        }
-      }
-
-      pictures = pictures.filter(
-        (picture) =>
-          typeof picture.image !== "undefined" &&
-          !picture.image.endsWith(".gif")
-      );
-
-      const fetchImage = async (url, withCorsProxy) => {
-        let location = url;
-        if (withCorsProxy) {
-          location = `https://walkinwallet.herokuapp.com/${url}`;
-        }
-
-        try {
-          const image = await axios.get(location, {
-            responseType: "blob",
-            timeout: 6000,
-          });
-          return image.data;
-        } catch (error) {
-          console.log(error);
-          return null;
-        }
-      };
-
-      let downloads = 0;
-      for (const picture of pictures) {
-        if (picture.image.startsWith("http")) {
-          let image = await fetchImage(picture.image, false);
-
-          if (image === null) {
-            image = await fetchImage(picture.image, true);
-          }
-
-          if (image !== null) {
-            picture.image = URL.createObjectURL(image);
-
-            const htmlImage = document.createElement("img");
-
-            htmlImage.src = picture.image;
-            await loadImage(htmlImage, picture.image);
-
-            picture.width = htmlImage.naturalWidth;
-            picture.height = htmlImage.naturalHeight;
-
-            htmlImage.remove();
-          } else {
-            console.log("Unable to fetch image " + picture.image);
-          }
-
-          downloads += 1;
-          setProgress(
-            Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100
+        .then((response) => {
+          setHasViewPermissions(response.data.public);
+        })
+        .catch((error) => {
+          message.warn(
+            "Failed to fetch wallet permissions. Please try again later and/or send us a mail to contact@walkinwallet.com"
           );
-        }
-      }
-
-      pictures = pictures.filter(
-        (picture) =>
-          picture.image.startsWith("data") || picture.image.startsWith("blob")
-      );
-
-      setNfts(pictures);
-      setStage("");
-      setProgress(100);
+          console.warn(error);
+        })
+        .finally(() => setRequestedPermissions(true));
+    } else {
+      setHasViewPermissions(false);
     }
-  }, [account, isInitialized, user]);
+  }, [isInitialized, user, address]);
 
-  useEffect(() => {
-    setNfts();
-    setStage("Read wallet");
-    setProgress(0);
-    fetchNFTs();
-  }, [fetchNFTs]);
+  if (requestedPermissions && !hasViewPermissions) {
+    return (
+      <div className={classes.page}>
+        <p>
+          This wallet is not marked as a public wallet. Please login to start
+          walking if it's yours.
+        </p>
+        <Link to="/">Go back</Link>
+      </div>
+    );
+  }
 
-  if (typeof nfts !== "undefined") {
-    if (!user || !user.attributes || !user.attributes.ethAddress) {
-      return (
-        <div className={classes.page}>
-          <p>Please login to start walking</p>
-          <Link to="/">Go back</Link>
-        </div>
-      );
-    } else if (nfts.length === 0) {
+  if (typeof nfts !== "undefined" && hasViewPermissions) {
+    if (nfts.length === 0) {
       return (
         <div className={classes.page}>
           <p>
@@ -196,8 +239,8 @@ const Main = (props) => {
         </div>
       );
     }
-    const gallery = buildGallery(user.attributes.ethAddress, nfts.length);
-    const paintings = hangPaintings(user.attributes.ethAddress, gallery, nfts);
+    const gallery = buildGallery(address, nfts.length);
+    const paintings = hangPaintings(address, gallery, nfts);
     return (
       <div className={classes.fullscreen}>
         <Scene gallery={gallery} paintings={paintings} />
@@ -233,7 +276,7 @@ const App = () => {
         <Route path="/" element={<WelcomePage />} />
         <Route path="/about" element={<WelcomePage />} />
         <Route path="/roadmap" element={<WelcomePage />} />
-        <Route path="/gallery" element={<Main />} />
+        <Route path="/:address" element={<Main />} />
       </Routes>
     </Router>
   );
