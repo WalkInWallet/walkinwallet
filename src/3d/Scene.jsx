@@ -187,7 +187,7 @@ const Scene = (props) => {
         colOffset -= 50;
       }
 
-      camera.setTarget(new Vector3(0 + colOffset, 30, 44 + rowOffset));
+      camera.setTarget(new Vector3(0 + colOffset, 10, 44 + rowOffset));
     }
 
     const light = new HemisphericLight(

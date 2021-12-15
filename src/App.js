@@ -87,7 +87,12 @@ const Main = (props) => {
             (await axios.get(picture.token_uri)).data
           );
         } catch (error) {
-          console.log(error);
+          if (!error.response) {
+            console.log(error.toJSON());
+          } else if (error.response.status !== 404) {
+            console.log(error.response.status);
+            console.log(error);
+          }
         }
       }
     }
@@ -127,20 +132,36 @@ const Main = (props) => {
           responseType: "blob",
           timeout: 6000,
         });
-        return image.data;
+        return { image: image.data, tryAgain: false };
       } catch (error) {
-        console.log(error);
-        return null;
+        if (error.response) {
+          console.log(error.response);
+          return {
+            image: null,
+            tryAgain:
+              !withCorsProxy &&
+              (error.response.status === 403 || error.response.status === 401),
+          };
+        } else {
+          if (withCorsProxy) {
+            console.log(error);
+          }
+          return {
+            image: null,
+            tryAgain: !withCorsProxy,
+          };
+        }
       }
     };
 
     let downloads = 0;
     for (const picture of pictures) {
       if (picture.image.startsWith("http")) {
-        let image = await fetchImage(picture.image, false);
+        let { image, tryAgain } = await fetchImage(picture.image, false);
 
-        if (image === null) {
-          image = await fetchImage(picture.image, true);
+        if (tryAgain) {
+          const retry = await fetchImage(picture.image, true);
+          image = retry.image;
         }
 
         if (image !== null) {

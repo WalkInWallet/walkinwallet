@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { createUseStyles } from "react-jss";
 import Account from "../components/Account";
 import { useMoralis } from "react-moralis";
+import { HeartOutlined } from "@ant-design/icons";
 
 const useStyles = createUseStyles({
   page: {
@@ -141,8 +142,8 @@ const WelcomePage = () => {
       </div>
       <footer className={classes.footer}>
         <p>
-          Created by{" "}
-          <a href="mailto:contact@walkinwallet.com">Fabian Bormann</a> ©2021{" "}
+          Created with <HeartOutlined /> by{" "}
+          <a href="mailto:contact@walkinwallet.com">WalkInWallet</a> ©2021
         </p>
       </footer>
     </div>
