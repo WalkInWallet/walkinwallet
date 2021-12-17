@@ -4,6 +4,9 @@ import {
   MeshBuilder,
   Mesh,
   PBRMetallicRoughnessMaterial,
+  PBRMaterial,
+  Constants,
+  Color3,
 } from "@babylonjs/core";
 
 const RoomType = Object.freeze({
@@ -24,13 +27,13 @@ const RoomType = Object.freeze({
   TOP_CLOSED: 14,
 });
 
-const createRoomTile = (type, row, col, scene) => {
+const createRoomTile = (type, row, col, scene, probe) => {
   const wallMaterial = new PBRMetallicRoughnessMaterial("wallMaterial", scene);
   wallMaterial.baseTexture = new Texture(
-    "./textures/Wallpaper_Glassweave_001_ambientOcclusion_blue.jpg"
+    "./textures/Wallpaper_Glassweave_001_basecolor.jpg"
   );
-  wallMaterial.metallic = 0.1;
-  wallMaterial.roughness = 0.9;
+  wallMaterial.metallic = 0;
+  wallMaterial.roughness = 1;
   wallMaterial.baseTexture.uScale = 2;
   wallMaterial.baseTexture.vScale = 2;
 
@@ -46,31 +49,28 @@ const createRoomTile = (type, row, col, scene) => {
   wallMaterial.normalTexture.uScale = 2;
   wallMaterial.normalTexture.vScale = 2;
 
-  const groundMaterial = new PBRMetallicRoughnessMaterial(
-    "GroundMaterial",
-    scene
+  const groundMaterial = new PBRMaterial("GroundMaterial", scene);
+  groundMaterial.reflectionTexture = probe.cubeTexture;
+
+  groundMaterial.ambientTexture = new Texture(
+    "./textures/Marble_White_006_basecolor.jpg"
   );
-  groundMaterial.baseTexture = new Texture(
-    "./textures/Wood_Floor_011_basecolor.jpg"
-  );
-  groundMaterial.metallic = 0;
-  groundMaterial.roughness = 1;
+
+  groundMaterial.metallic = 0.2;
+  groundMaterial.roughness = 0.6;
+
+  groundMaterial.realTimeFiltering = true;
+  groundMaterial.realTimeFilteringQuality =
+    Constants.TEXTURE_FILTERING_QUALITY_Low;
 
   const ceilingMaterial = new PBRMetallicRoughnessMaterial(
     "GroundMaterial",
     scene
   );
-  ceilingMaterial.baseTexture = new Texture(
-    "./textures/Wood_Floor_006_OCC.jpg"
-  );
 
-  ceilingMaterial.metallicRoughnessTexture = new Texture(
-    "./textures/Wood_Floor_006_ROUGH.jpg"
-  );
-
-  ceilingMaterial.normalTexture = new Texture(
-    "./textures/Wood_Floor_006_NORM.jpg"
-  );
+  ceilingMaterial.baseColor = new Color3(1, 1, 1);
+  ceilingMaterial.metallic = 0.2;
+  ceilingMaterial.roughness = 0.6;
 
   const ground = MeshBuilder.CreatePlane(
     "Ground",
@@ -88,6 +88,7 @@ const createRoomTile = (type, row, col, scene) => {
   ceiling.rotation = new Vector3(Math.PI / 2, 0, 0);
   ceiling.position = new Vector3(col * 100, 80, row * 100);
   ceiling.material = ceilingMaterial;
+  probe.renderList.push(ceiling);
 
   const walls = [];
 
@@ -177,6 +178,7 @@ const createRoomTile = (type, row, col, scene) => {
   for (const wall of walls) {
     wall.checkCollisions = true;
     wall.material = wallMaterial;
+    probe.renderList.push(wall);
   }
 };
 

@@ -9,7 +9,6 @@ import axios from "axios";
 
 const useStyles = createUseStyles({
   account: {
-    padding: 24,
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
@@ -87,7 +86,6 @@ const Account = () => {
       <Button
         size="large"
         className={classes.button}
-        ghost
         onClick={async () => {
           try {
             if (typeof window.ethereum !== "undefined") {
@@ -126,8 +124,8 @@ const Account = () => {
       <div className={classes.account}>
         <Button
           size="large"
+          type="primary"
           className={classes.button}
-          ghost
           icon={<Blockie currentWallet scale={3} />}
           onClick={() => {
             navigate(`/${user.attributes.ethAddress}`, { replace: true });

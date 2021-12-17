@@ -134,7 +134,13 @@ const hangPaintings = (hash, rooms, paintings) => {
   return paintings;
 };
 
-const drawPainting = (painting, scene, setHudDisplayVisible, setHudInfos) => {
+const drawPainting = (
+  painting,
+  scene,
+  setHudDisplayVisible,
+  setHudInfos,
+  probe
+) => {
   const { row, col, wall, side, hasNeighbour } = painting.position;
   let rowOffset = 100 * row;
   let colOffset = 100 * col - 6;
@@ -239,7 +245,9 @@ const drawPainting = (painting, scene, setHudDisplayVisible, setHudInfos) => {
         mesh.actionManager.registerAction(exitAction);
       }
 
-      if (mesh.name === "__root__") {
+      if (mesh.name !== "__root__") {
+        probe.renderList.push(mesh);
+      } else {
         mesh.scaling = new Vector3(8, 8, 8);
         mesh.position = new Vector3(0 + colOffset, 30, 44 + rowOffset);
         mesh.rotation = rotation;

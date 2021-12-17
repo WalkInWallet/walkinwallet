@@ -7,6 +7,7 @@ import {
   Light,
   TouchCamera,
   MeshBuilder,
+  ReflectionProbe,
 } from "@babylonjs/core";
 
 import SceneComponent from "babylonjs-hook";
@@ -15,8 +16,6 @@ import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
 import { useState } from "react";
 import { createUseStyles } from "react-jss";
-import { Button } from "antd";
-import { LeftOutlined } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
 
@@ -25,10 +24,17 @@ const useStyles = createUseStyles({
     height: "100%",
     width: "100%",
   },
-  controls: {
+  back: {
+    backgroundImage: "url(./WalkInWallet_Arrow_Sharp.png)",
     position: "absolute",
     top: 8,
     left: 8,
+    height: 48,
+    width: 48,
+    backgroundSize: "contain",
+    transform: "scaleX(-1)",
+    cursor: "pointer",
+    zIndex: 3,
   },
   hud: {
     bottom: 0,
@@ -135,8 +141,10 @@ const Scene = (props) => {
     camera.ellipsoid = new Vector3(1.5, 0.5, 1.5);
     camera.checkCollisions = true;
 
+    const probe = new ReflectionProbe("main", 1024, scene);
+
     for (const room of gallery) {
-      createRoomTile(room.type, room.row, room.col, scene);
+      createRoomTile(room.type, room.row, room.col, scene, probe);
     }
 
     let paintingNextToCamera;
@@ -149,8 +157,14 @@ const Scene = (props) => {
     collider.visibility = 0;
     collider.position = new Vector3(0, 10, 35);
 
+    const root = MeshBuilder.CreateBox("root", { size: 1 }, scene);
+    root.parent = camera;
+    root.position = new Vector3(0, -20, 0);
+
+    probe.attachToMesh(root);
+
     for (const painting of paintings) {
-      drawPainting(painting, scene, setHudDisplayVisible, setHudInfos);
+      drawPainting(painting, scene, setHudDisplayVisible, setHudInfos, probe);
 
       if (paintingNextToCamera) {
         if (
@@ -196,12 +210,12 @@ const Scene = (props) => {
       scene
     );
 
-    light.intensity = 0.3;
+    light.intensity = 1;
 
     const pointLight = new PointLight("PointLight", new Vector3(0, 30, 0));
     pointLight.falloffType = Light.FALLOFF_STANDARD;
     pointLight.range = 250;
-    pointLight.intensity = 4;
+    pointLight.intensity = 2.5;
 
     scene.clearColor = new Color3(0, 0, 0);
     scene.registerBeforeRender(() => {
@@ -213,17 +227,12 @@ const Scene = (props) => {
 
   return (
     <div className={classes.fullscreen} style={{ position: "relative" }}>
-      <div className={classes.controls}>
-        <Button
-          icon={<LeftOutlined />}
-          ghost
-          onClick={() => {
-            navigate("/", { replace: true });
-          }}
-        >
-          Back
-        </Button>
-      </div>
+      <div
+        className={classes.back}
+        onClick={() => {
+          navigate("/", { replace: true });
+        }}
+      />
       <SceneComponent
         antialias
         onSceneReady={onSceneReady}
