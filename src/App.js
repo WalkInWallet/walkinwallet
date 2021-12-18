@@ -29,6 +29,10 @@ const useStyles = createUseStyles({
     height: "100%",
     width: "100%",
     position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
   },
   progress: {
     height: "100%",
@@ -48,6 +52,7 @@ const Main = (props) => {
   const [progress, setProgress] = useState(false);
   const [hasViewPermissions, setHasViewPermissions] = useState(false);
   const [requestedPermissions, setRequestedPermissions] = useState(false);
+  const [sceneVisible, setSceneVisible] = useState(false);
   const [stage, setStage] = useState("");
   const [nfts, setNfts] = useState();
   const { address } = useParams();
@@ -182,7 +187,7 @@ const Main = (props) => {
 
         downloads += 1;
         setProgress(
-          Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100
+          Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100 - 1
         );
       }
     }
@@ -193,8 +198,8 @@ const Main = (props) => {
     );
 
     setNfts(pictures);
-    setStage("");
-    setProgress(100);
+    setStage("Rendering 3D gallery");
+    setProgress(99);
   }, [account, address]);
 
   useEffect(() => {
@@ -264,7 +269,18 @@ const Main = (props) => {
     const paintings = hangPaintings(address, gallery, nfts);
     return (
       <div className={classes.fullscreen}>
-        <Scene gallery={gallery} paintings={paintings} />
+        <p style={{ display: sceneVisible ? "none" : "block" }}>{stage}</p>
+        <Progress
+          style={{ display: sceneVisible ? "none" : "block" }}
+          type="circle"
+          percent={progress}
+        />
+        <Scene
+          onSceneReady={() => setSceneVisible(true)}
+          isVisible={sceneVisible}
+          gallery={gallery}
+          paintings={paintings}
+        />
       </div>
     );
   } else {

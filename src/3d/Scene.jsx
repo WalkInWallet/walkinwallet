@@ -223,10 +223,17 @@ const Scene = (props) => {
       pointLight.position.x = camera.position.x;
       pointLight.position.z = camera.position.z;
     });
+    scene.executeWhenReady(() => props.onSceneReady());
   };
 
   return (
-    <div className={classes.fullscreen} style={{ position: "relative" }}>
+    <div
+      className={classes.fullscreen}
+      style={{
+        position: "relative",
+        display: props.isVisible ? "block" : "none",
+      }}
+    >
       <div
         className={classes.back}
         onClick={() => {
