@@ -17,7 +17,6 @@ const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     position: "relative",
-    overflow: "auto",
     color: "white",
     "& video": {
       width: "100%",
@@ -179,7 +178,7 @@ const WelcomePage = () => {
 
       <img src="background.png" alt="preview of a 3d wallet" />
       <div className={classes.content}>
-        <Row gutter={[24, 0]}>
+        <Row gutter={[{ xs: 0, sm: 24 }, 0]}>
           <Col xs={24} sm={12}>
             <p className={classes.subtitle}>
               Walk in wallets as you would walk in galleries
