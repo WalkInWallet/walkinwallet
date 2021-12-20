@@ -55,6 +55,8 @@ const Main = (props) => {
   const [sceneVisible, setSceneVisible] = useState(false);
   const [stage, setStage] = useState("");
   const [nfts, setNfts] = useState();
+  const [gallery, setGallery] = useState();
+  const [paintings, setPaintings] = useState();
   const { address } = useParams();
 
   const classes = useStyles();
@@ -159,6 +161,9 @@ const Main = (props) => {
       }
     };
 
+    const rooms = buildGallery(address, pictures.length);
+    setGallery(rooms);
+
     let downloads = 0;
     for (const picture of pictures) {
       if (picture.image.startsWith("http")) {
@@ -182,22 +187,30 @@ const Main = (props) => {
 
           htmlImage.remove();
         } else {
-          console.log("Unable to fetch image " + picture.image);
+          console.log(
+            `Unable to fetch image ${picture.image} using fallback image.`
+          );
+          picture.image = "./offline.png";
+          picture.width = 1685;
+          picture.height = 1685;
         }
 
         downloads += 1;
         setProgress(
           Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100 - 1
         );
+      } else {
+        picture.image = "./offline.png";
       }
     }
 
-    pictures = pictures.filter(
+    /*pictures = pictures.filter(
       (picture) =>
         picture.image.startsWith("data") || picture.image.startsWith("blob")
-    );
+    );*/
 
     setNfts(pictures);
+    setPaintings(hangPaintings(address, rooms, pictures));
     setStage("Rendering 3D gallery");
     setProgress(99);
   }, [account, address]);
@@ -241,6 +254,8 @@ const Main = (props) => {
     }
   }, [isInitialized, user, address]);
 
+  const onSceneReady = useCallback(() => setSceneVisible(true), []);
+
   if (requestedPermissions && !hasViewPermissions) {
     return (
       <div className={classes.page}>
@@ -253,7 +268,11 @@ const Main = (props) => {
     );
   }
 
-  if (typeof nfts !== "undefined" && hasViewPermissions) {
+  if (
+    typeof nfts !== "undefined" &&
+    hasViewPermissions &&
+    typeof gallery !== "undefined"
+  ) {
     if (nfts.length === 0) {
       return (
         <div className={classes.page}>
@@ -265,8 +284,7 @@ const Main = (props) => {
         </div>
       );
     }
-    const gallery = buildGallery(address, nfts.length);
-    const paintings = hangPaintings(address, gallery, nfts);
+
     return (
       <div className={classes.fullscreen}>
         <p style={{ display: sceneVisible ? "none" : "block" }}>{stage}</p>
@@ -276,7 +294,7 @@ const Main = (props) => {
           percent={progress}
         />
         <Scene
-          onSceneReady={() => setSceneVisible(true)}
+          onSceneReady={onSceneReady}
           isVisible={sceneVisible}
           gallery={gallery}
           paintings={paintings}

@@ -4,8 +4,6 @@ import {
   MeshBuilder,
   Mesh,
   PBRMetallicRoughnessMaterial,
-  PBRMaterial,
-  Constants,
   Color3,
 } from "@babylonjs/core";
 
@@ -49,20 +47,6 @@ const createRoomTile = (type, row, col, scene, probe) => {
   wallMaterial.normalTexture.uScale = 2;
   wallMaterial.normalTexture.vScale = 2;
 
-  const groundMaterial = new PBRMaterial("GroundMaterial", scene);
-  groundMaterial.reflectionTexture = probe.cubeTexture;
-
-  groundMaterial.ambientTexture = new Texture(
-    "./textures/Marble_White_006_basecolor.jpg"
-  );
-
-  groundMaterial.metallic = 0.2;
-  groundMaterial.roughness = 0.6;
-
-  groundMaterial.realTimeFiltering = true;
-  groundMaterial.realTimeFilteringQuality =
-    Constants.TEXTURE_FILTERING_QUALITY_Low;
-
   const ceilingMaterial = new PBRMetallicRoughnessMaterial(
     "GroundMaterial",
     scene
@@ -71,15 +55,6 @@ const createRoomTile = (type, row, col, scene, probe) => {
   ceilingMaterial.baseColor = new Color3(1, 1, 1);
   ceilingMaterial.metallic = 0.2;
   ceilingMaterial.roughness = 0.6;
-
-  const ground = MeshBuilder.CreatePlane(
-    "Ground",
-    { size: 100, sideOrientation: Mesh.DOUBLESIDE },
-    scene
-  );
-  ground.rotation = new Vector3(Math.PI / 2, 0, 0);
-  ground.position = new Vector3(col * 100, 0, row * 100);
-  ground.material = groundMaterial;
 
   const ceiling = MeshBuilder.CreatePlane("Ceiling", {
     size: 100,
