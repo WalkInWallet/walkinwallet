@@ -61,13 +61,6 @@ const Main = (props) => {
 
   const classes = useStyles();
 
-  const loadImage = (image, blob) =>
-    new Promise((resolve, reject) => {
-      image.addEventListener("load", () => resolve(image));
-      image.addEventListener("error", (error) => reject(error));
-      image.src = blob;
-    });
-
   const fetchNFTs = useCallback(async () => {
     let pictures = [];
 
@@ -84,7 +77,7 @@ const Main = (props) => {
       }
     }
 
-    setProgress(20);
+    setProgress(21);
     setStage("Collecting NFT metadata and read images");
 
     for (const picture of pictures) {
@@ -128,16 +121,48 @@ const Main = (props) => {
         typeof picture.image !== "undefined" && !picture.image.endsWith(".gif")
     );
 
+    const rooms = buildGallery(address, pictures.length);
+    setGallery(rooms);
+    setNfts(pictures);
+    hangPaintings(address, rooms, pictures);
+    setStage("Rendering 3D gallery");
+    setProgress(99);
+  }, [account, address]);
+
+  useEffect(() => {
+    if (hasViewPermissions) {
+      setNfts();
+      setStage("Read wallet");
+      setProgress(0);
+      fetchNFTs();
+    }
+  }, [fetchNFTs, address, hasViewPermissions, isInitialized]);
+
+  useEffect(() => {
     const fetchImage = async (url, withCorsProxy) => {
       let location = url;
+      if (location.startsWith("https://ipfs.io/")) {
+        location = location.replace(
+          "https://ipfs.io/",
+          "https://cloudflare-ipfs.com/"
+        );
+      }
+
+      if (location.startsWith("https://gateway.ipfs.io")) {
+        location = location.replace(
+          "https://gateway.ipfs.io",
+          "https://cloudflare-ipfs.com/"
+        );
+      }
+
       if (withCorsProxy) {
-        location = `https://walkinwallet.herokuapp.com/${url}`;
+        location = `https://us-central1-walkinwallet.cloudfunctions.net/api/proxy?url=${url}`;
       }
 
       try {
         const image = await axios.get(location, {
           responseType: "blob",
-          timeout: 6000,
+          timeout: 30000,
         });
         return { image: image.data, tryAgain: false };
       } catch (error) {
@@ -161,68 +186,81 @@ const Main = (props) => {
       }
     };
 
-    const rooms = buildGallery(address, pictures.length);
-    setGallery(rooms);
+    if (
+      hasViewPermissions &&
+      sceneVisible &&
+      typeof nfts !== "undefined" &&
+      nfts.length > 0
+    ) {
+      let fetchedPaintings = [];
+      let stopFetching = false;
 
-    let downloads = 0;
-    for (const picture of pictures) {
-      if (picture.image.startsWith("http")) {
-        let { image, tryAgain } = await fetchImage(picture.image, false);
+      const loadPaintings = async () => {
+        const loadImage = (image, blob) =>
+          new Promise((resolve, reject) => {
+            image.addEventListener("load", () => {
+              image.replaceWith(image.cloneNode(true));
+              resolve(image);
+            });
+            image.addEventListener("error", (error) => {
+              image.replaceWith(image.cloneNode(true));
+              reject(error);
+            });
+            image.src = blob;
+          });
+        const htmlImage = document.createElement("img");
 
-        if (tryAgain) {
-          const retry = await fetchImage(picture.image, true);
-          image = retry.image;
-        }
+        for (const picture of nfts) {
+          if (stopFetching || typeof picture.width !== "undefined") {
+            return;
+          }
+          if (picture.image.startsWith("http")) {
+            let { image, tryAgain } = await fetchImage(picture.image, false);
 
-        if (image !== null) {
-          picture.image = URL.createObjectURL(image);
-
-          const htmlImage = document.createElement("img");
-
-          htmlImage.src = picture.image;
-          await loadImage(htmlImage, picture.image);
-
-          picture.width = htmlImage.naturalWidth;
-          picture.height = htmlImage.naturalHeight;
-
+            if (tryAgain) {
+              const retry = await fetchImage(picture.image, true);
+              image = retry.image;
+            }
+            if (!stopFetching) {
+              setStage("Rendering 3D gallery");
+              setProgress(99);
+            }
+            if (image !== null) {
+              picture.image = URL.createObjectURL(image);
+              htmlImage.src = picture.image;
+              try {
+                await loadImage(htmlImage, picture.image);
+                picture.width = htmlImage.naturalWidth;
+                picture.height = htmlImage.naturalHeight;
+              } catch (error) {
+                console.log(error);
+              }
+            } else {
+              console.log(
+                `Unable to fetch image ${picture.image} using fallback image.`
+              );
+              picture.image = "./offline.png";
+              picture.width = 1685;
+              picture.height = 1685;
+            }
+          } else {
+            picture.image = "./offline.png";
+          }
           htmlImage.remove();
-        } else {
-          console.log(
-            `Unable to fetch image ${picture.image} using fallback image.`
-          );
-          picture.image = "./offline.png";
-          picture.width = 1685;
-          picture.height = 1685;
+          fetchedPaintings = [...fetchedPaintings, picture];
+          if (!stopFetching) {
+            setPaintings(fetchedPaintings);
+          }
         }
+      };
 
-        downloads += 1;
-        setProgress(
-          Math.round((20 + downloads * (80 / pictures.length)) * 100) / 100 - 1
-        );
-      } else {
-        picture.image = "./offline.png";
-      }
+      loadPaintings();
+
+      return () => {
+        stopFetching = true;
+      };
     }
-
-    /*pictures = pictures.filter(
-      (picture) =>
-        picture.image.startsWith("data") || picture.image.startsWith("blob")
-    );*/
-
-    setNfts(pictures);
-    setPaintings(hangPaintings(address, rooms, pictures));
-    setStage("Rendering 3D gallery");
-    setProgress(99);
-  }, [account, address]);
-
-  useEffect(() => {
-    if (hasViewPermissions) {
-      setNfts();
-      setStage("Read wallet");
-      setProgress(0);
-      fetchNFTs();
-    }
-  }, [fetchNFTs, address, hasViewPermissions, isInitialized]);
+  }, [sceneVisible, nfts, hasViewPermissions]);
 
   useEffect(() => {
     if (

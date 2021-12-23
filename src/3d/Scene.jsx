@@ -76,7 +76,6 @@ const Scene = (props) => {
       !initialized &&
       typeof onSceneReady === "function"
     ) {
-      console.log("INIT");
       let camera;
 
       let hasTouchScreen = false;
@@ -138,11 +137,15 @@ const Scene = (props) => {
         const DOWN_KEY = 40;
         const D_KEY = 68;
         const RIGHT_KEY = 39;
+        const Q_KEY = 81;
+        const E_KEY = 69;
 
         camera.keysUp = [W_KEY, UP_KEY];
         camera.keysLeft = [A_KEY, LEFT_KEY];
         camera.keysDown = [S_KEY, DOWN_KEY];
         camera.keysRight = [D_KEY, RIGHT_KEY];
+        camera.keysRotateLeft.push(Q_KEY);
+        camera.keysRotateRight.push(E_KEY);
 
         canvas.addEventListener(
           "click",
@@ -162,6 +165,11 @@ const Scene = (props) => {
 
       camera.fov = 0.8;
       camera.inertia = 0;
+
+      mainScene.fogMode = Scene.FOGMODE_EXP2;
+
+      mainScene.fogColor = new Color3(0.5, 0.5, 0.5);
+      mainScene.fogDensity = 1;
 
       camera.ellipsoid = new Vector3(1.5, 0.5, 1.5);
       camera.checkCollisions = true;
@@ -244,55 +252,21 @@ const Scene = (props) => {
 
   useEffect(() => {
     if (typeof mainScene !== "undefined" && typeof paintings !== "undefined") {
-      const camera = mainScene.getCameraByName("MainCamera");
       const ground = mainScene.getMeshByName("Ground");
-      let paintingNextToCamera;
       for (const painting of paintings) {
-        drawPainting(
-          painting,
-          mainScene,
-          setHudDisplayVisible,
-          setHudInfos,
-          ground.material.reflectionTexture
+        const { row, col, wall, side } = painting.position;
+        const paintingMesh = mainScene.getMeshByName(
+          `${row}.${col}.${wall}.${side}`
         );
-
-        if (paintingNextToCamera) {
-          if (
-            painting.position.row + painting.position.col <
-            paintingNextToCamera.position.row +
-              paintingNextToCamera.position.col
-          ) {
-            paintingNextToCamera = painting;
-          }
-        } else {
-          paintingNextToCamera = painting;
+        if (!paintingMesh) {
+          drawPainting(
+            painting,
+            mainScene,
+            setHudDisplayVisible,
+            setHudInfos,
+            ground.material.reflectionTexture
+          );
         }
-      }
-
-      if (paintingNextToCamera) {
-        const { row, col, wall } = paintingNextToCamera.position;
-        let rowOffset = 100 * row;
-        let colOffset = 100 * col - 6;
-
-        if (wall === "bottom") {
-          rowOffset -= 100;
-        }
-
-        if (wall === "top") {
-          rowOffset += 10;
-        }
-
-        if (wall === "right") {
-          rowOffset -= 46.25;
-          colOffset += 60;
-        }
-
-        if (wall === "left") {
-          rowOffset -= 46.25;
-          colOffset -= 50;
-        }
-
-        camera.setTarget(new Vector3(0 + colOffset, 10, 44 + rowOffset));
       }
     }
   }, [mainScene, paintings]);

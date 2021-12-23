@@ -241,7 +241,7 @@ const WelcomePage = () => {
           />
           <Button
             type="link"
-            href="https://www.instagram.com/walkinwallet/"
+            href="https://twitter.com/walkinwallet"
             icon={<TwitterOutlined />}
             target="_blank"
           />
