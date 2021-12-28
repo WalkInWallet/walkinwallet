@@ -1,9 +1,9 @@
 import { useMoralis } from "react-moralis";
 import { useEffect, useRef } from "react";
 
-import { Button, message, Skeleton } from "antd";
+import { Button, message } from "antd";
 import { useNavigate } from "react-router-dom";
-import Blockies from "react-blockies";
+import Blockie from "./Blockie";
 import { createUseStyles } from "react-jss";
 import axios from "axios";
 
@@ -31,28 +31,6 @@ const useStyles = createUseStyles({
   },
 });
 
-const Blockie = (props) => {
-  const { user } = useMoralis();
-
-  if (
-    !props.address &&
-    (!user || !user.attributes || !user.attributes.ethAddress)
-  )
-    return <Skeleton.Avatar active size={40} />;
-
-  return (
-    <Blockies
-      seed={
-        props.currentWallet
-          ? user.attributes.ethAddress.toLowerCase()
-          : props.address.toLowerCase()
-      }
-      className="identicon"
-      {...props}
-    />
-  );
-};
-
 const Account = () => {
   const { authenticate, isAuthenticated, user, isAuthenticating } =
     useMoralis();
@@ -64,10 +42,20 @@ const Account = () => {
   useEffect(() => {
     if (isAuthenticated && !isAuthenticating && wasAuthenticating.current) {
       axios
-        .post("https://us-central1-walkinwallet.cloudfunctions.net/api/login", {
-          message: user.attributes.authData.moralisEth.data,
-          signature: user.attributes.authData.moralisEth.signature,
-        })
+        .post(
+          "https://us-central1-walkinwallet.cloudfunctions.net/api/v2/login",
+          {},
+          {
+            headers: {
+              "x-user-message": encodeURI(
+                user.attributes.authData.moralisEth.data
+              ),
+              "x-user-signature": encodeURI(
+                user.attributes.authData.moralisEth.signature
+              ),
+            },
+          }
+        )
         .catch((error) => {
           console.warn("WalkInWallet backend is currently not available.");
           console.warn(error);
@@ -85,6 +73,8 @@ const Account = () => {
     return (
       <Button
         size="large"
+        type="primary"
+        danger
         className={classes.button}
         onClick={async () => {
           try {
@@ -126,7 +116,7 @@ const Account = () => {
           size="large"
           type="primary"
           className={classes.button}
-          icon={<Blockie currentWallet scale={3} />}
+          icon={<Blockie address={user.attributes.ethAddress} scale={3} />}
           onClick={() => {
             navigate(`/${user.attributes.ethAddress}`, { replace: true });
           }}

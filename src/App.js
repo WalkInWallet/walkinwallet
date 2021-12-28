@@ -7,7 +7,7 @@ import Scene from "./3d/Scene";
 import "./App.css";
 import WelcomePage from "./pages/WelcomePage";
 import {
-  HashRouter as Router,
+  BrowserRouter as Router,
   Routes,
   Route,
   Link,
@@ -57,6 +57,9 @@ const Main = (props) => {
   const [nfts, setNfts] = useState();
   const [gallery, setGallery] = useState();
   const [paintings, setPaintings] = useState();
+  const [galleryVisibility, setGalleryVisibility] = useState("private");
+  const [userInfosNotCollected, setUserInfosNotCollected] = useState(true);
+  const [userLinkSecret, setUserLinkSecret] = useState("");
   const { address } = useParams();
 
   const classes = useStyles();
@@ -141,6 +144,13 @@ const Main = (props) => {
   useEffect(() => {
     const fetchImage = async (url, withCorsProxy) => {
       let location = url;
+      if (location.startsWith("ipfs://")) {
+        location = location.replace(
+          "ipfs://",
+          "https://cloudflare-ipfs.com/ipfs/"
+        );
+      }
+
       if (location.startsWith("https://ipfs.io/")) {
         location = location.replace(
           "https://ipfs.io/",
@@ -214,7 +224,10 @@ const Main = (props) => {
           if (stopFetching || typeof picture.width !== "undefined") {
             return;
           }
-          if (picture.image.startsWith("http")) {
+          if (
+            picture.image.startsWith("http") ||
+            picture.image.startsWith("ipfs://")
+          ) {
             let { image, tryAgain } = await fetchImage(picture.image, false);
 
             if (tryAgain) {
@@ -227,6 +240,7 @@ const Main = (props) => {
             }
             if (image !== null) {
               picture.image = URL.createObjectURL(image);
+              picture.offline = false;
               htmlImage.src = picture.image;
               try {
                 await loadImage(htmlImage, picture.image);
@@ -242,9 +256,13 @@ const Main = (props) => {
               picture.image = "./offline.png";
               picture.width = 1685;
               picture.height = 1685;
+              picture.offline = true;
             }
           } else {
             picture.image = "./offline.png";
+            picture.width = 1685;
+            picture.height = 1685;
+            picture.offline = true;
           }
           htmlImage.remove();
           fetchedPaintings = [...fetchedPaintings, picture];
@@ -264,6 +282,40 @@ const Main = (props) => {
 
   useEffect(() => {
     if (
+      userInfosNotCollected &&
+      isInitialized &&
+      user &&
+      user.attributes &&
+      user.attributes.ethAddress &&
+      user.attributes.ethAddress.toLowerCase() === address.toLowerCase()
+    ) {
+      axios
+        .get("https://us-central1-walkinwallet.cloudfunctions.net/api/infos", {
+          headers: {
+            "x-user-message": encodeURI(
+              user.attributes.authData.moralisEth.data
+            ),
+            "x-user-signature": encodeURI(
+              user.attributes.authData.moralisEth.signature
+            ),
+          },
+        })
+        .then((response) => {
+          setUserLinkSecret(response.data.secret);
+          setGalleryVisibility(response.data.visibility);
+        })
+        .catch((error) => {
+          console.warn("WalkInWallet backend is currently not available.");
+          console.warn(error);
+        })
+        .finally(() => {
+          setUserInfosNotCollected(false);
+        });
+    }
+  }, [isInitialized, user, address, userInfosNotCollected]);
+
+  useEffect(() => {
+    if (
       isInitialized &&
       user &&
       user.attributes &&
@@ -275,10 +327,10 @@ const Main = (props) => {
       setRequestedPermissions(false);
       axios
         .get(
-          `https://us-central1-walkinwallet.cloudfunctions.net/api/check/${address}`
+          `https://us-central1-walkinwallet.cloudfunctions.net/api/v2/check/${address}`
         )
         .then((response) => {
-          setHasViewPermissions(response.data.public);
+          setHasViewPermissions(response.data.allowed);
         })
         .catch((error) => {
           message.warn(
@@ -336,6 +388,8 @@ const Main = (props) => {
           isVisible={sceneVisible}
           gallery={gallery}
           paintings={paintings}
+          userLinkSecret={userLinkSecret}
+          galleryVisibility={galleryVisibility}
         />
       </div>
     );

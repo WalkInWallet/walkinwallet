@@ -18,11 +18,13 @@ import SceneComponent from "babylonjs-hook";
 import "@babylonjs/loaders/glTF";
 import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { createUseStyles } from "react-jss";
 import { Button } from "antd";
-import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
+import { SettingOutlined, DisconnectOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { useLocalStorage } from "../helper";
+import Settings from "../components/Settings";
 
 const useStyles = createUseStyles({
   fullscreen: {
@@ -46,6 +48,7 @@ const useStyles = createUseStyles({
     height: "fit-content",
     position: "absolute",
     padding: 16,
+    width: "100%",
     color: "white",
     background: "rgba(0,0,0,0.65)",
   },
@@ -61,14 +64,50 @@ const useStyles = createUseStyles({
 const Scene = (props) => {
   const CAMERA_HEIGHT = 40;
   const [hudDisplayVisible, setHudDisplayVisible] = useState(false);
+  const hasTouchScreen = useMemo(() => {
+    let touchScreen = false;
+    if ("maxTouchPoints" in navigator) {
+      touchScreen = navigator.maxTouchPoints > 0;
+    } else if ("msMaxTouchPoints" in navigator) {
+      touchScreen = navigator.msMaxTouchPoints > 0;
+    } else {
+      const mediaQuery = window.matchMedia && matchMedia("(pointer:coarse)");
+      if (mediaQuery && mediaQuery.media === "(pointer:coarse)") {
+        touchScreen = !!mediaQuery.matches;
+      } else if ("orientation" in window) {
+        touchScreen = true;
+      } else {
+        const userAgent = navigator.userAgent;
+        touchScreen =
+          /\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(userAgent) ||
+          /\b(Android|Windows Phone|iPad|iPod)\b/i.test(userAgent);
+      }
+    }
+    return touchScreen;
+  }, []);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [mainScene, setMainScene] = useState();
   const [initialized, setInitialized] = useState(false);
   const [hudInfos, setHudInfos] = useState({});
-  const [showInfos, setShowInfos] = useState(true);
+  const isDrawerOpen = useRef(false);
   const classes = useStyles();
+  const [hideEverything, setHideEverything] = useLocalStorage(
+    "user.settings.overlay.hideEverything",
+    false
+  );
+  const [showTitleOnly, setShowTitleOnly] = useLocalStorage(
+    "user.settings.overlay.titleOnly",
+    hasTouchScreen
+  );
 
   const navigate = useNavigate();
-  const { gallery, paintings, onSceneReady } = props;
+  const {
+    gallery,
+    paintings,
+    onSceneReady,
+    userLinkSecret,
+    galleryVisibility,
+  } = props;
 
   useEffect(() => {
     if (
@@ -78,28 +117,8 @@ const Scene = (props) => {
     ) {
       let camera;
 
-      let hasTouchScreen = false;
-      if ("maxTouchPoints" in navigator) {
-        hasTouchScreen = navigator.maxTouchPoints > 0;
-      } else if ("msMaxTouchPoints" in navigator) {
-        hasTouchScreen = navigator.msMaxTouchPoints > 0;
-      } else {
-        const mediaQuery = window.matchMedia && matchMedia("(pointer:coarse)");
-        if (mediaQuery && mediaQuery.media === "(pointer:coarse)") {
-          hasTouchScreen = !!mediaQuery.matches;
-        } else if ("orientation" in window) {
-          hasTouchScreen = true;
-        } else {
-          const userAgent = navigator.userAgent;
-          hasTouchScreen =
-            /\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(userAgent) ||
-            /\b(Android|Windows Phone|iPad|iPod)\b/i.test(userAgent);
-        }
-      }
-
       if (hasTouchScreen) {
         camera = new TouchCamera("MainCamera", new Vector3(0, 3, 0), mainScene);
-        setShowInfos(false);
       } else {
         camera = new UniversalCamera(
           "MainCamera",
@@ -109,13 +128,7 @@ const Scene = (props) => {
       }
       const canvas = mainScene.getEngine().getRenderingCanvas();
 
-      camera.setTarget(
-        new Vector3(
-          camera.position.x,
-          camera.position.y,
-          camera.position.z + CAMERA_HEIGHT
-        )
-      );
+      camera.setTarget(new Vector3(150, camera.position.y, 0));
       camera.wheelDeltaPercentage = 0.01;
       camera.attachControl(canvas, true);
 
@@ -204,11 +217,21 @@ const Scene = (props) => {
         pointLight.position.z = camera.position.z;
       });
       setInitialized(true);
+
+      document.addEventListener("keydown", (event) => {
+        if (event.code === "KeyM") {
+          isDrawerOpen.current = !isDrawerOpen.current;
+          setDrawerVisible(isDrawerOpen.current);
+        }
+      });
     }
-  }, [mainScene, initialized, onSceneReady]);
+  }, [mainScene, initialized, onSceneReady, hasTouchScreen]);
 
   useEffect(() => {
     if (typeof mainScene !== "undefined" && typeof gallery !== "undefined") {
+      if (mainScene.getMeshByName("Ground")) {
+        return;
+      }
       const ground = MeshBuilder.CreatePlane(
         "Ground",
         { size: 100 * 20, sideOrientation: Mesh.FRONTSIDE },
@@ -229,12 +252,7 @@ const Scene = (props) => {
         mainScene,
         true
       );
-      ground.material.reflectionTexture.mirrorPlane = new Plane(
-        0,
-        -1.0,
-        0,
-        -2.0
-      );
+      ground.material.reflectionTexture.mirrorPlane = new Plane(0, -1.0, 0, 0);
       ground.material.reflectionTexture.level = 0.2;
       ground.material.reflectionTexture.adaptiveBlurKernel = 15;
 
@@ -288,16 +306,25 @@ const Scene = (props) => {
       <Button
         className={classes.info}
         type="primary"
-        icon={
-          showInfos ? (
-            <EyeOutlined style={{ fontSize: "1.8rem" }} />
-          ) : (
-            <EyeInvisibleOutlined style={{ fontSize: "1.8rem" }} />
-          )
-        }
+        style={{ display: drawerVisible ? "none" : "block" }}
+        icon={<SettingOutlined style={{ fontSize: "1.8rem" }} />}
         shape="circle"
         onClick={() => {
-          setShowInfos(!showInfos);
+          setDrawerVisible(true);
+          isDrawerOpen.current = true;
+        }}
+      />
+      <Settings
+        visible={drawerVisible}
+        userLinkSecret={userLinkSecret}
+        galleryVisibility={galleryVisibility}
+        hideEverything={hideEverything}
+        setHideEverything={setHideEverything}
+        showTitleOnly={showTitleOnly}
+        setShowTitleOnly={setShowTitleOnly}
+        onClose={() => {
+          setDrawerVisible(false);
+          isDrawerOpen.current = false;
         }}
       />
       <SceneComponent
@@ -308,17 +335,32 @@ const Scene = (props) => {
       <div
         className={classes.hud}
         style={{
-          display: hudDisplayVisible && showInfos ? "block" : "none",
+          display: hudDisplayVisible && !hideEverything ? "block" : "none",
         }}
       >
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href={hudInfos.external_url}
+        {hudInfos.offline ? (
+          <div>
+            <p style={{ color: "#f797b6", userSelect: "none" }}>
+              {hudInfos.name} <DisconnectOutlined />
+            </p>
+          </div>
+        ) : (
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href={hudInfos.token_uri}
+          >
+            {hudInfos.name}
+          </a>
+        )}
+        <p
+          style={{
+            display: showTitleOnly ? "none" : "block",
+            userSelect: "none",
+          }}
         >
-          {hudInfos.name}
-        </a>
-        <p>{hudInfos.description}</p>
+          {hudInfos.description}
+        </p>
       </div>
     </div>
   );

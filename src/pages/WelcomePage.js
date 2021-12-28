@@ -2,6 +2,7 @@ import { Button, Card, Row, Col } from "antd";
 import { createUseStyles } from "react-jss";
 import Account from "../components/Account";
 import { useMoralis } from "react-moralis";
+import Blockie from "../components/Blockie";
 import {
   HeartFilled,
   InstagramOutlined,
@@ -25,7 +26,7 @@ const useStyles = createUseStyles({
       objectFit: "cover",
       zIndex: -1,
     },
-    "& img": {
+    "& > img": {
       width: "100%",
       height: "100%",
       position: "absolute",
@@ -93,6 +94,7 @@ const useStyles = createUseStyles({
     color: "#12284b",
     fontSize: 28,
     fontWeight: 600,
+    marginBottom: 0,
     "@media screen and (max-width: 576px)": {
       textAlign: "center",
     },
@@ -142,6 +144,13 @@ const useStyles = createUseStyles({
       margin: "0 auto",
     },
   },
+  account: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+    marginBottom: 24,
+  },
 });
 
 const WelcomePage = () => {
@@ -179,44 +188,45 @@ const WelcomePage = () => {
       <img src="background.png" alt="preview of a 3d wallet" />
       <div className={classes.content}>
         <Row gutter={[{ xs: 0, sm: 24 }, 0]}>
-          <Col xs={24} sm={12}>
+          <Col xs={24} sm={11} md={14}>
             <p className={classes.subtitle}>
               Walk in wallets as you would walk in galleries
             </p>
+            <div className={classes.account}>
+              <Account />
+            </div>
             <p className={classes.title}>
               Login and start walking. No manual configuration required, NFT
               support for Binance Smart Chain, Ethereum Mainnet and Polygon
               Network
             </p>
           </Col>
-          <Col xs={24} sm={12}>
+          <Col xs={24} sm={13} md={10}>
             <Row gutter={[0, 24]}>
               <Col span={24}>
                 <Card
                   className={classes.card}
-                  title="Walk in your wallet"
-                  style={{ maxWidth: 400 }}
+                  onClick={() => {
+                    window.location.href =
+                      "/0xb251ef5a3d35776931805eb54c73e07b5bec1632";
+                  }}
+                  hoverable
+                  cover={<img alt="example" src="./example_wallet.png" />}
+                  style={{ maxWidth: 400, width: 300 }}
                 >
-                  <Account />
-                </Card>
-              </Col>
-              <Col span={24}>
-                <Card
-                  className={classes.card}
-                  title="Walk in public wallets"
-                  style={{ maxWidth: 400 }}
-                >
-                  <a href="/#/0xb251ef5a3d35776931805eb54c73e07b5bec1632">
-                    {getEllipsisTxt(
-                      "0xb251ef5a3d35776931805eb54c73e07b5bec1632"
-                    )}
-                  </a>
-                  <br />
-                  <a href="/#/0xccc8d1306c35719cf6a101fdd64f91f5129fb80a">
-                    {getEllipsisTxt(
-                      "0xccc8d1306c35719cf6a101fdd64f91f5129fb80a"
-                    )}
-                  </a>
+                  <Card.Meta
+                    title="Visit our Demo Gallery"
+                    avatar={
+                      <Blockie address="0xb251ef5a3d35776931805eb54c73e07b5bec1632" />
+                    }
+                    description={
+                      <a href="/0xb251ef5a3d35776931805eb54c73e07b5bec1632">
+                        {getEllipsisTxt(
+                          "0xb251ef5a3d35776931805eb54c73e07b5bec1632"
+                        )}
+                      </a>
+                    }
+                  />
                 </Card>
               </Col>
             </Row>
@@ -247,7 +257,7 @@ const WelcomePage = () => {
           />
           <Button
             type="link"
-            href="https://www.instagram.com/walkinwallet/"
+            href="https://www.linkedin.com/company/walkinwallet/"
             icon={<LinkedinOutlined />}
             target="_blank"
           />
