@@ -18,6 +18,7 @@ const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     position: "relative",
+    overflowY: "auto",
     color: "white",
     "& video": {
       width: "100%",

@@ -30,6 +30,8 @@ const useStyles = createUseStyles({
   fullscreen: {
     height: "100%",
     width: "100%",
+    overflow: "hidden",
+    outline: "none",
   },
   back: {
     backgroundImage: "url(./WalkInWallet_Arrow_Small.png)",

@@ -158,9 +158,9 @@ const Main = (props) => {
         );
       }
 
-      if (location.startsWith("https://gateway.ipfs.io")) {
+      if (location.startsWith("https://gateway.ipfs.io/")) {
         location = location.replace(
-          "https://gateway.ipfs.io",
+          "https://gateway.ipfs.io/",
           "https://cloudflare-ipfs.com/"
         );
       }
