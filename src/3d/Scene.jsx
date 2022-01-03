@@ -101,11 +101,13 @@ const Scene = (props) => {
     "user.settings.overlay.titleOnly",
     hasTouchScreen
   );
+  const loadedPictures = useRef([]);
 
   const navigate = useNavigate();
   const {
     gallery,
     paintings,
+    nfts,
     onSceneReady,
     userLinkSecret,
     galleryVisibility,
@@ -114,8 +116,10 @@ const Scene = (props) => {
   useEffect(() => {
     if (
       typeof mainScene !== "undefined" &&
-      !initialized &&
-      typeof onSceneReady === "function"
+      typeof gallery !== "undefined" &&
+      typeof nfts !== "undefined" &&
+      typeof onSceneReady === "function" &&
+      !initialized
     ) {
       let camera;
 
@@ -211,29 +215,24 @@ const Scene = (props) => {
       pointLight.range = 250;
       pointLight.intensity = 1.8;
 
-      mainScene.clearColor = new Color3(0, 0, 0);
-      mainScene.executeWhenReady(() => onSceneReady());
-      mainScene.registerBeforeRender(() => {
-        camera.position.y = CAMERA_HEIGHT;
-        pointLight.position.x = camera.position.x;
-        pointLight.position.z = camera.position.z;
-      });
-      setInitialized(true);
+      const loadingTexture = new Texture("./loading_animation.png", mainScene);
 
-      document.addEventListener("keydown", (event) => {
-        if (event.code === "KeyM") {
-          isDrawerOpen.current = !isDrawerOpen.current;
-          setDrawerVisible(isDrawerOpen.current);
+      loadingTexture.uScale = -1 / 10;
+      loadingTexture.vScale = 1;
+      loadingTexture.uOffset = 0;
+      loadingTexture.vOffset = 1;
+      loadingTexture.name = "LoadingTexture";
+
+      setInterval(() => {
+        if (loadingTexture.uOffset >= 1 - 2 / 10) {
+          loadingTexture.uOffset = 0;
+        } else {
+          loadingTexture.uOffset = loadingTexture.uOffset + 1 / 10;
         }
-      });
-    }
-  }, [mainScene, initialized, onSceneReady, hasTouchScreen]);
+      }, 1000);
 
-  useEffect(() => {
-    if (typeof mainScene !== "undefined" && typeof gallery !== "undefined") {
-      if (mainScene.getMeshByName("Ground")) {
-        return;
-      }
+      mainScene.clearColor = new Color3(0, 0, 0);
+
       const ground = MeshBuilder.CreatePlane(
         "Ground",
         { size: 100 * 20, sideOrientation: Mesh.FRONTSIDE },
@@ -267,25 +266,82 @@ const Scene = (props) => {
           ground.material.reflectionTexture
         );
       }
-    }
-  }, [mainScene, gallery]);
 
-  useEffect(() => {
-    if (typeof mainScene !== "undefined" && typeof paintings !== "undefined") {
-      const ground = mainScene.getMeshByName("Ground");
-      for (const painting of paintings) {
-        const { row, col, wall, side } = painting.position;
+      for (const nft of nfts) {
+        const { row, col, wall, side } = nft.position;
         const paintingMesh = mainScene.getMeshByName(
           `${row}.${col}.${wall}.${side}`
         );
         if (!paintingMesh) {
           drawPainting(
-            painting,
+            nft,
             mainScene,
             setHudDisplayVisible,
             setHudInfos,
             ground.material.reflectionTexture
           );
+        }
+      }
+
+      mainScene.executeWhenReady(() => onSceneReady());
+      mainScene.registerBeforeRender(() => {
+        camera.position.y = CAMERA_HEIGHT;
+        pointLight.position.x = camera.position.x;
+        pointLight.position.z = camera.position.z;
+      });
+      setInitialized(true);
+
+      document.addEventListener("keydown", (event) => {
+        if (event.code === "KeyM") {
+          isDrawerOpen.current = !isDrawerOpen.current;
+          setDrawerVisible(isDrawerOpen.current);
+        }
+      });
+    }
+  }, [mainScene, initialized, onSceneReady, hasTouchScreen, gallery, nfts]);
+
+  useEffect(() => {
+    if (typeof mainScene !== "undefined" && typeof paintings !== "undefined") {
+      for (const painting of paintings) {
+        const { row, col, wall, side } = painting.position;
+        if (!loadedPictures.current.includes(`${row}.${col}.${wall}.${side}`)) {
+          loadedPictures.current.push(`${row}.${col}.${wall}.${side}`);
+          const ratio = painting.width / painting.height;
+          const paintingTexture = new Texture(painting.image);
+          paintingTexture.uScale = -1;
+          paintingTexture.invertZ = true;
+
+          if (ratio > 0.9 && ratio < 1.1) {
+            const paintingMaterial = mainScene.getMaterialByName(
+              `Painting#material#${row}.${col}.${wall}.${side}#square`
+            );
+
+            if (paintingMaterial) {
+              for (const meshName of ["Painting", "Passepartout", "Frame"]) {
+                const baseName = `${meshName}#${row}.${col}.${wall}.${side}#`;
+                const rectMesh = mainScene.getMeshByName(baseName + "rect");
+                const squareMesh = mainScene.getMeshByName(baseName + "square");
+                rectMesh.visibility = 0;
+                squareMesh.visibility = 1;
+              }
+              paintingMaterial.baseTexture = paintingTexture;
+            }
+          } else {
+            const paintingMaterial = mainScene.getMaterialByName(
+              `Painting#material#${row}.${col}.${wall}.${side}#rect`
+            );
+
+            if (paintingMaterial) {
+              for (const meshName of ["Painting", "Passepartout", "Frame"]) {
+                const baseName = `${meshName}#${row}.${col}.${wall}.${side}#`;
+                const rectMesh = mainScene.getMeshByName(baseName + "rect");
+                const squareMesh = mainScene.getMeshByName(baseName + "square");
+                rectMesh.visibility = 1;
+                squareMesh.visibility = 0;
+              }
+              paintingMaterial.baseTexture = paintingTexture;
+            }
+          }
         }
       }
     }

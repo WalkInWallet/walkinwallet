@@ -5,7 +5,6 @@ import {
   SceneLoader,
   Mesh,
   PBRMetallicRoughnessMaterial,
-  Texture,
   ExecuteCodeAction,
   ActionManager,
 } from "@babylonjs/core";
@@ -148,7 +147,7 @@ const drawPainting = (
   let rotation = new Vector3(0, 0, 0);
 
   if (wall === "bottom") {
-    rowOffset -= 100;
+    rowOffset -= 91.9;
 
     if (side === 0 && hasNeighbour) {
       colOffset -= 10;
@@ -160,7 +159,7 @@ const drawPainting = (
   }
 
   if (wall === "top") {
-    rowOffset += 10;
+    rowOffset += 3.5;
 
     if (side === 0 && hasNeighbour) {
       colOffset -= 30;
@@ -172,19 +171,19 @@ const drawPainting = (
   if (wall === "right") {
     rotation = new Vector3(0, Math.PI / 2, 0);
     rowOffset -= 46.25;
-    colOffset += 60;
+    colOffset += 53.9;
 
     if (side === 0 && hasNeighbour) {
-      rowOffset -= 10;
+      rowOffset -= 22.5;
     } else if (side === 1 && hasNeighbour) {
-      rowOffset += 35;
+      rowOffset += 22.5;
     }
   }
 
   if (wall === "left") {
     rotation = new Vector3(0, -Math.PI / 2, 0);
     rowOffset -= 46.25;
-    colOffset -= 50;
+    colOffset -= 41.9;
 
     if (side === 0 && hasNeighbour) {
       rowOffset -= 20;
@@ -193,68 +192,80 @@ const drawPainting = (
     }
   }
 
-  const ratio = painting.width / painting.height;
-  let model = "frame.glb";
+  for (const model of ["frame-square.glb", "frame.glb"]) {
+    SceneLoader.ImportMesh("", "/models/", model, scene, (meshes) => {
+      const isRectangular = model === "frame.glb";
 
-  if (ratio > 0.9 && ratio < 1.1) {
-    model = "frame-square.glb";
+      for (const mesh of meshes) {
+        mesh.checkCollisions = true;
+        if (mesh.material) {
+          mesh.material.sideOrientation = Mesh.DOUBLESIDE;
+        }
+
+        if (mesh.name === "Frame") {
+          mesh.material.albedoTexture.invertZ = true;
+        }
+
+        if (mesh.name === "Painting") {
+          const paintingMaterial = new PBRMetallicRoughnessMaterial(
+            `Painting#material#${row}.${col}.${wall}.${side}#${
+              isRectangular ? "rect" : "square"
+            }`,
+            scene
+          );
+
+          const loadingTexture = scene.getTextureByName("LoadingTexture");
+          paintingMaterial.baseTexture = loadingTexture;
+          paintingMaterial.metallic = 0.1;
+          paintingMaterial.roughness = 0.9;
+
+          mesh.material = paintingMaterial;
+          mesh.material.sideOrientation = Mesh.DOUBLESIDE;
+
+          if (isRectangular) {
+            mesh.actionManager = new ActionManager(scene);
+            const enterAction = new ExecuteCodeAction(
+              {
+                trigger: ActionManager.OnIntersectionEnterTrigger,
+                parameter: { mesh: scene.getMeshByName("collider") },
+              },
+              () => {
+                setHudDisplayVisible(true);
+                setHudInfos({
+                  ...painting,
+                });
+              }
+            );
+            const exitAction = new ExecuteCodeAction(
+              {
+                trigger: ActionManager.OnIntersectionExitTrigger,
+                parameter: { mesh: scene.getMeshByName("collider") },
+              },
+              () => {
+                setHudDisplayVisible(false);
+                setHudInfos({});
+              }
+            );
+            mesh.actionManager.registerAction(enterAction);
+            mesh.actionManager.registerAction(exitAction);
+          }
+        }
+
+        if (mesh.name !== "__root__") {
+          probe.renderList.push(mesh);
+          mesh.name = `${mesh.name}#${row}.${col}.${wall}.${side}#${
+            isRectangular ? "rect" : "square"
+          }`;
+          if (isRectangular) {
+            mesh.visibility = 0;
+          }
+        } else {
+          mesh.position = new Vector3(0 + colOffset, 15, 44 + rowOffset);
+          mesh.rotation = rotation;
+        }
+      }
+    });
   }
-
-  SceneLoader.ImportMesh("", "/models/", model, scene, (meshes) => {
-    for (const mesh of meshes) {
-      if (mesh.material) {
-        mesh.material.sideOrientation = Mesh.DOUBLESIDE;
-      }
-
-      if (mesh.name === "painting") {
-        const paintingMaterial = new PBRMetallicRoughnessMaterial(
-          "painting#" + painting.image,
-          scene
-        );
-        paintingMaterial.baseTexture = new Texture(painting.image);
-        paintingMaterial.metallic = 0.1;
-        paintingMaterial.roughness = 0.9;
-
-        mesh.material = paintingMaterial;
-        mesh.material.sideOrientation = Mesh.BACKSIDE;
-
-        mesh.actionManager = new ActionManager(scene);
-        const enterAction = new ExecuteCodeAction(
-          {
-            trigger: ActionManager.OnIntersectionEnterTrigger,
-            parameter: { mesh: scene.getMeshByName("collider") },
-          },
-          () => {
-            setHudDisplayVisible(true);
-            setHudInfos({
-              ...painting,
-            });
-          }
-        );
-        const exitAction = new ExecuteCodeAction(
-          {
-            trigger: ActionManager.OnIntersectionExitTrigger,
-            parameter: { mesh: scene.getMeshByName("collider") },
-          },
-          () => {
-            setHudDisplayVisible(false);
-            setHudInfos({});
-          }
-        );
-        mesh.actionManager.registerAction(enterAction);
-        mesh.actionManager.registerAction(exitAction);
-      }
-
-      if (mesh.name !== "__root__") {
-        probe.renderList.push(mesh);
-      } else {
-        mesh.scaling = new Vector3(8, 8, 8);
-        mesh.position = new Vector3(0 + colOffset, 30, 44 + rowOffset);
-        mesh.rotation = rotation;
-        mesh.name = `${row}.${col}.${wall}.${side}`;
-      }
-    }
-  });
 };
 
 export { hangPaintings, drawPainting };

@@ -84,6 +84,18 @@ const Main = (props) => {
     setStage("Collecting NFT metadata and read images");
 
     for (const picture of pictures) {
+      if (
+        picture.token_uri ===
+        "https://api.opensea.io/api/v2/metadata/matic/0x2953399124F0cBB46d2CbACD8A89cF0599974963/0xb251ef5a3d35776931805eb54c73e07b5bec1632000000000000010000002710"
+      ) {
+        picture.metadata = JSON.stringify({
+          name: "WalkInWallet Logo - 2021 Edition",
+          description:
+            "This is the WalkInWallet Logo of 2021 designed by Ines Opaska. Support WalkInWallet now and be rewarded later. We have a bag of features in mind and owners of the logo will have access to some rare functionalities in the future.",
+          image: "./nfts/logo-2021-1024.png",
+        });
+      }
+
       if (picture.metadata === null && picture.token_uri !== null) {
         try {
           picture.metadata = JSON.stringify(
@@ -244,8 +256,37 @@ const Main = (props) => {
               htmlImage.src = picture.image;
               try {
                 await loadImage(htmlImage, picture.image);
-                picture.width = htmlImage.naturalWidth;
-                picture.height = htmlImage.naturalHeight;
+
+                const MAX_WIDTH = 768;
+                const MAX_HEIGHT = 768;
+
+                let width = htmlImage.naturalWidth;
+                let height = htmlImage.naturalHeight;
+
+                if (width > height) {
+                  if (width > MAX_WIDTH) {
+                    height = height * (MAX_WIDTH / width);
+                    width = MAX_WIDTH;
+                  }
+                } else {
+                  if (height > MAX_HEIGHT) {
+                    width = width * (MAX_HEIGHT / height);
+                    height = MAX_HEIGHT;
+                  }
+                }
+
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+
+                const context = canvas.getContext("2d");
+                context.drawImage(htmlImage, 0, 0, width, height);
+
+                picture.width = width;
+                picture.height = height;
+                picture.image = canvas.toDataURL("image/jpeg", 1.0);
+
+                canvas.remove();
               } catch (error) {
                 console.log(error);
               }
@@ -258,6 +299,25 @@ const Main = (props) => {
               picture.height = 1685;
               picture.offline = true;
             }
+          } else if (picture.image === "./nfts/logo-2021-1024.png") {
+            await loadImage(htmlImage, "./nfts/logo-2021-1024.png");
+            const canvas = document.createElement("canvas");
+
+            const width = 1024;
+            const height = 1024;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext("2d");
+            context.drawImage(htmlImage, 0, 0, width, height);
+
+            picture.width = width;
+            picture.height = height;
+            picture.image = canvas.toDataURL("image/jpeg", 1.0);
+
+            canvas.remove();
+            picture.offline = false;
           } else {
             picture.image = "./offline.png";
             picture.width = 1685;
@@ -388,6 +448,7 @@ const Main = (props) => {
           isVisible={sceneVisible}
           gallery={gallery}
           paintings={paintings}
+          nfts={nfts}
           userLinkSecret={userLinkSecret}
           galleryVisibility={galleryVisibility}
         />
