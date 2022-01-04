@@ -74,7 +74,11 @@ const Main = (props) => {
           address: address,
           limit: 200,
         });
-        pictures = [...pictures, ...response.result];
+
+        pictures = [
+          ...pictures,
+          ...response.result.map((result) => ({ ...result, network: network })),
+        ];
       } catch (error) {
         console.warn(`Failed to fetch NFTs from ${network} network`);
       }
@@ -233,6 +237,14 @@ const Main = (props) => {
         const htmlImage = document.createElement("img");
 
         for (const picture of nfts) {
+          picture.link = `https://opensea.io/assets/${picture.token_address}/${picture.token_id}`;
+
+          if (picture.network === "polygon") {
+            picture.link = picture.link.replace("assets/", "assets/matic/");
+          } else {
+            picture.link = `https://treasureland.market/assets/${picture.token_address}/${picture.token_id}?chain_id=56`;
+          }
+
           if (stopFetching || typeof picture.width !== "undefined") {
             return;
           }

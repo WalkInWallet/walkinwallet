@@ -21,7 +21,11 @@ import { drawPainting } from "./PaintingDrawer";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { createUseStyles } from "react-jss";
 import { Button } from "antd";
-import { SettingOutlined, DisconnectOutlined } from "@ant-design/icons";
+import {
+  SettingOutlined,
+  DisconnectOutlined,
+  LinkOutlined,
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useLocalStorage } from "../helper";
 import Settings from "../components/Settings";
@@ -403,12 +407,8 @@ const Scene = (props) => {
             </p>
           </div>
         ) : (
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            href={hudInfos.token_uri}
-          >
-            {hudInfos.name}
+          <a target="_blank" rel="noopener noreferrer" href={hudInfos.link}>
+            {hudInfos.name} <LinkOutlined />
           </a>
         )}
         <p
