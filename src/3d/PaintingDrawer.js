@@ -197,13 +197,13 @@ const drawPainting = (
       const isRectangular = model === "frame.glb";
 
       for (const mesh of meshes) {
-        mesh.checkCollisions = true;
         if (mesh.material) {
           mesh.material.sideOrientation = Mesh.DOUBLESIDE;
         }
 
-        if (mesh.name === "Frame") {
-          mesh.material.albedoTexture.invertZ = true;
+        if (mesh.name === "Collider") {
+          mesh.visibility = 0;
+          mesh.checkCollisions = true;
         }
 
         if (mesh.name === "Painting") {
