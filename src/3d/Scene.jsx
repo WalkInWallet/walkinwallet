@@ -402,12 +402,26 @@ const Scene = (props) => {
       >
         {hudInfos.offline ? (
           <div>
-            <p style={{ color: "#f797b6", userSelect: "none" }}>
+            <p
+              style={{
+                fontWeight: "bold",
+                color: "#f797b6",
+                userSelect: "none",
+              }}
+            >
               {hudInfos.name} <DisconnectOutlined />
             </p>
           </div>
         ) : (
-          <a target="_blank" rel="noopener noreferrer" href={hudInfos.link}>
+          <a
+            style={{
+              fontWeight: "bold",
+              userSelect: "none",
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+            href={hudInfos.link}
+          >
             {hudInfos.name} <LinkOutlined />
           </a>
         )}

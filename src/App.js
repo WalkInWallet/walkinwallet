@@ -15,6 +15,7 @@ import {
 } from "react-router-dom";
 import { createUseStyles } from "react-jss";
 import { message, Progress } from "antd";
+import FAQ from "./pages/FAQ";
 
 const useStyles = createUseStyles({
   page: {
@@ -53,7 +54,7 @@ const Main = (props) => {
   const [hasViewPermissions, setHasViewPermissions] = useState(false);
   const [requestedPermissions, setRequestedPermissions] = useState(false);
   const [sceneVisible, setSceneVisible] = useState(false);
-  const [stage, setStage] = useState("");
+  const [stage, setStage] = useState("Read wallet");
   const [nfts, setNfts] = useState();
   const [gallery, setGallery] = useState();
   const [paintings, setPaintings] = useState();
@@ -494,8 +495,7 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/" element={<WelcomePage />} />
-        <Route path="/about" element={<WelcomePage />} />
-        <Route path="/roadmap" element={<WelcomePage />} />
+        <Route path="/faq" element={<FAQ />} />
         <Route path="/:address" element={<Main />} />
       </Routes>
     </Router>

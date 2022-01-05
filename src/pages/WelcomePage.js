@@ -3,14 +3,8 @@ import { createUseStyles } from "react-jss";
 import Account from "../components/Account";
 import { useMoralis } from "react-moralis";
 import Blockie from "../components/Blockie";
-import {
-  HeartFilled,
-  InstagramOutlined,
-  TwitterOutlined,
-  FacebookOutlined,
-  LinkedinOutlined,
-  MailOutlined,
-} from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import Footer from "./Footer";
 
 const useStyles = createUseStyles({
   page: {
@@ -20,13 +14,6 @@ const useStyles = createUseStyles({
     position: "relative",
     overflowY: "auto",
     color: "white",
-    "& video": {
-      width: "100%",
-      height: "100%",
-      position: "absolute",
-      objectFit: "cover",
-      zIndex: -1,
-    },
     "& > img": {
       width: "100%",
       height: "100%",
@@ -53,42 +40,6 @@ const useStyles = createUseStyles({
     "& h1": {
       color: "white",
       textShadow: "1px 1px 3px black",
-    },
-  },
-  footer: {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#12284b",
-    padding: 12,
-    "& h2": {
-      color: "white",
-      marginBottom: 4,
-    },
-    "& > span": {
-      borderBottom: "2px solid white",
-      width: 32,
-      marginTop: 4,
-      marginBottom: 4,
-    },
-    "& p": {
-      margin: 0,
-      textAlign: "center",
-      textShadow: "1px 1px 3px black",
-    },
-  },
-  contact: {
-    display: "flex",
-    marginTop: 12,
-    marginBottom: 12,
-    "& > a": {
-      marginLeft: 4,
-      marginRight: 4,
-      "& > span": {
-        fontSize: "1.2rem",
-        color: "white",
-      },
     },
   },
   subtitle: {
@@ -152,10 +103,25 @@ const useStyles = createUseStyles({
     marginTop: 24,
     marginBottom: 24,
   },
+  faq: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 32,
+    marginBottom: 48,
+    "@media screen and (max-width: 576px)": {
+      marginTop: 48,
+      marginBottom: 24,
+    },
+    "& span": {
+      padding: "0 6px",
+    },
+  },
 });
 
 const WelcomePage = () => {
   const classes = useStyles();
+  const navigate = useNavigate();
   const { logout, isAuthenticated } = useMoralis();
 
   const getEllipsisTxt = (str, n = 12) => {
@@ -232,47 +198,24 @@ const WelcomePage = () => {
               </Col>
             </Row>
           </Col>
+          <Col span={24}>
+            <div className={classes.faq}>
+              <Button
+                style={{ borderRadius: 0 }}
+                size="large"
+                type="primary"
+                onClick={() => {
+                  navigate("/faq", { replace: true });
+                }}
+                danger
+              >
+                FAQ
+              </Button>
+            </div>
+          </Col>
         </Row>
       </div>
-      <footer className={classes.footer}>
-        <h2>Contact</h2>
-        <span />
-        <div className={classes.contact}>
-          <Button
-            type="link"
-            href="https://www.instagram.com/walkinwallet/"
-            icon={<InstagramOutlined />}
-            target="_blank"
-          />
-          <Button
-            type="link"
-            href="https://www.instagram.com/walkinwallet/"
-            icon={<FacebookOutlined />}
-            target="_blank"
-          />
-          <Button
-            type="link"
-            href="https://twitter.com/walkinwallet"
-            icon={<TwitterOutlined />}
-            target="_blank"
-          />
-          <Button
-            type="link"
-            href="https://www.linkedin.com/company/walkinwallet/"
-            icon={<LinkedinOutlined />}
-            target="_blank"
-          />
-          <Button
-            type="link"
-            href="mailto:contact@walkinwallet.com"
-            icon={<MailOutlined />}
-            target="_blank"
-          />
-        </div>
-        <p>
-          Created with <HeartFilled /> by WalkInWallet ©2021
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 };
