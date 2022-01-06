@@ -12,6 +12,7 @@ import {
   MirrorTexture,
   Plane,
   Mesh,
+  //PointerEventTypes,
 } from "@babylonjs/core";
 
 import SceneComponent from "babylonjs-hook";
@@ -189,10 +190,11 @@ const Scene = (props) => {
       camera.fov = 0.8;
       camera.inertia = 0;
 
-      mainScene.fogMode = Scene.FOGMODE_EXP2;
-
-      mainScene.fogColor = new Color3(0.5, 0.5, 0.5);
-      mainScene.fogDensity = 1;
+      /*mainScene.onPointerObservable.add((event) => {
+        if (event.type === PointerEventTypes.POINTERDOUBLETAP) {
+          console.log("double tap");
+        }
+      });*/
 
       camera.ellipsoid = new Vector3(1.5, 0.5, 1.5);
       camera.checkCollisions = true;
