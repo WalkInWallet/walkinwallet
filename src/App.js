@@ -104,7 +104,7 @@ const Main = (props) => {
       if (picture.metadata === null && picture.token_uri !== null) {
         try {
           picture.metadata = JSON.stringify(
-            (await axios.get(picture.token_uri)).data
+            (await axios.get(picture.token_uri, { timeout: 2000 })).data
           );
         } catch (error) {
           if (!error.response) {
@@ -242,7 +242,7 @@ const Main = (props) => {
 
           if (picture.network === "polygon") {
             picture.link = picture.link.replace("assets/", "assets/matic/");
-          } else {
+          } else if (picture.network === "bsc") {
             picture.link = `https://treasureland.market/assets/${picture.token_address}/${picture.token_id}?chain_id=56`;
           }
 
@@ -301,6 +301,10 @@ const Main = (props) => {
 
                 canvas.remove();
               } catch (error) {
+                picture.image = "./offline.png";
+                picture.width = 1685;
+                picture.height = 1685;
+                picture.offline = true;
                 console.log(error);
               }
             } else {

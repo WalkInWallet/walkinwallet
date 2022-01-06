@@ -199,12 +199,12 @@ const Scene = (props) => {
 
       const collider = MeshBuilder.CreateBox(
         "collider",
-        { width: 20, depth: 40, height: 20 },
+        { width: 1, depth: 50, height: 1 },
         mainScene
       );
       collider.parent = camera;
       collider.visibility = 0;
-      collider.position = new Vector3(0, 10, 35);
+      collider.position = new Vector3(0, 0, 30);
 
       const light = new HemisphericLight(
         "HemisphericLight",
@@ -328,7 +328,11 @@ const Scene = (props) => {
                 rectMesh.visibility = 0;
                 squareMesh.visibility = 1;
               }
-              paintingMaterial.baseTexture = paintingTexture;
+              try {
+                paintingMaterial.baseTexture = paintingTexture;
+              } catch (error) {
+                console.log(error);
+              }
             }
           } else {
             const paintingMaterial = mainScene.getMaterialByName(
@@ -343,7 +347,11 @@ const Scene = (props) => {
                 rectMesh.visibility = 1;
                 squareMesh.visibility = 0;
               }
-              paintingMaterial.baseTexture = paintingTexture;
+              try {
+                paintingMaterial.baseTexture = paintingTexture;
+              } catch (error) {
+                console.log(error);
+              }
             }
           }
         }
@@ -400,38 +408,32 @@ const Scene = (props) => {
           display: hudDisplayVisible && !hideEverything ? "block" : "none",
         }}
       >
-        {hudInfos.offline ? (
-          <div>
-            <p
-              style={{
-                fontWeight: "bold",
-                color: "#f797b6",
-                userSelect: "none",
-              }}
-            >
-              {hudInfos.name} <DisconnectOutlined />
-            </p>
-          </div>
-        ) : (
-          <a
-            style={{
-              fontWeight: "bold",
-              userSelect: "none",
-            }}
-            target="_blank"
-            rel="noopener noreferrer"
-            href={hudInfos.link}
-          >
-            {hudInfos.name} <LinkOutlined />
-          </a>
-        )}
+        <a
+          style={{
+            fontWeight: "bold",
+            userSelect: "none",
+          }}
+          target="_blank"
+          rel="noopener noreferrer"
+          href={hudInfos.link}
+        >
+          {hudInfos.name}{" "}
+          {hudInfos.offline ? <DisconnectOutlined /> : <LinkOutlined />}
+        </a>
+
         <p
           style={{
             display: showTitleOnly ? "none" : "block",
             userSelect: "none",
+            maxHeight: "20vh",
+            overflowY: "auto",
+            paddingRight: 6,
+            marginTop: 6,
           }}
         >
-          {hudInfos.description}
+          {hudInfos.offline
+            ? "This artwork is offline, protected or currently unfetchable. Try to click on the artwork title and use it as direct link to get more information."
+            : hudInfos.description}
         </p>
       </div>
     </div>

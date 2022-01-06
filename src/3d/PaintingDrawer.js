@@ -150,7 +150,7 @@ const drawPainting = (
     rowOffset -= 91.9;
 
     if (side === 0 && hasNeighbour) {
-      colOffset -= 10;
+      colOffset -= 15;
     } else if (side === 1 && hasNeighbour) {
       colOffset += 30;
     }
@@ -162,9 +162,9 @@ const drawPainting = (
     rowOffset += 3.5;
 
     if (side === 0 && hasNeighbour) {
-      colOffset -= 30;
+      colOffset -= 20;
     } else if (side === 1 && hasNeighbour) {
-      colOffset += 20;
+      colOffset += 22.5;
     }
   }
 
