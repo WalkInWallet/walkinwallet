@@ -12,7 +12,7 @@ import {
   MirrorTexture,
   Plane,
   Mesh,
-  //PointerEventTypes,
+  PointerEventTypes,
 } from "@babylonjs/core";
 
 import SceneComponent from "babylonjs-hook";
@@ -189,13 +189,6 @@ const Scene = (props) => {
 
       camera.fov = 0.8;
       camera.inertia = 0;
-
-      /*mainScene.onPointerObservable.add((event) => {
-        if (event.type === PointerEventTypes.POINTERDOUBLETAP) {
-          console.log("double tap");
-        }
-      });*/
-
       camera.ellipsoid = new Vector3(1.5, 0.5, 1.5);
       camera.checkCollisions = true;
 
@@ -288,6 +281,38 @@ const Scene = (props) => {
           );
         }
       }
+
+      mainScene.onPointerObservable.add(({ pickInfo, type }) => {
+        if (
+          type === PointerEventTypes.POINTERTAP ||
+          type === PointerEventTypes.POINTERDOWN
+        ) {
+          if (
+            pickInfo.hit &&
+            pickInfo.pickedMesh.name.startsWith("Collider#")
+          ) {
+            if (pickInfo.pickedMesh.name.includes("right")) {
+              let meshPosition = pickInfo.pickedMesh.absolutePosition;
+              camera.position.x = meshPosition.x - 40;
+              camera.position.z = meshPosition.z + 2;
+            } else if (pickInfo.pickedMesh.name.includes("top")) {
+              let meshPosition = pickInfo.pickedMesh.absolutePosition;
+              camera.position.x = meshPosition.x - 2;
+              camera.position.z = meshPosition.z - 47.5;
+            } else if (pickInfo.pickedMesh.name.includes("bottom")) {
+              let meshPosition = pickInfo.pickedMesh.absolutePosition;
+              camera.position.x = meshPosition.x - 2;
+              camera.position.z = meshPosition.z + 45;
+            } else if (pickInfo.pickedMesh.name.includes("left")) {
+              let meshPosition = pickInfo.pickedMesh.absolutePosition;
+              camera.position.x = meshPosition.x + 40;
+              camera.position.z = meshPosition.z - 2;
+            }
+
+            camera.setTarget(pickInfo.pickedMesh.absolutePosition);
+          }
+        }
+      });
 
       mainScene.executeWhenReady(() => onSceneReady());
       mainScene.registerBeforeRender(() => {
