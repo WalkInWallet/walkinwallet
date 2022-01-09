@@ -200,6 +200,7 @@ const Scene = (props) => {
       collider.parent = camera;
       collider.visibility = 0;
       collider.position = new Vector3(0, 0, 30);
+      collider.isPickable = false;
 
       const light = new HemisphericLight(
         "HemisphericLight",
@@ -282,14 +283,19 @@ const Scene = (props) => {
         }
       }
 
+      //const sphere = MeshBuilder.CreateSphere("spehere", { diameter: 2 });
+
       mainScene.onPointerObservable.add(({ pickInfo, type }) => {
-        if (
-          type === PointerEventTypes.POINTERTAP ||
-          type === PointerEventTypes.POINTERDOWN
-        ) {
+        if (type === PointerEventTypes.POINTERDOWN) {
+          /*if (pickInfo.hit) {
+            console.log(pickInfo.pickedMesh.name);
+            sphere.position = pickInfo.pickedPoint;
+          }*/
+
           if (
-            pickInfo.hit &&
-            pickInfo.pickedMesh.name.startsWith("Collider#")
+            (pickInfo.hit &&
+              pickInfo.pickedMesh.name.startsWith("Collider#")) ||
+            pickInfo.pickedMesh.name.startsWith("Painting#")
           ) {
             if (pickInfo.pickedMesh.name.includes("right")) {
               let meshPosition = pickInfo.pickedMesh.absolutePosition;
