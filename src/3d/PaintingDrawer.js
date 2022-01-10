@@ -259,6 +259,12 @@ const drawPainting = (
           if (isRectangular) {
             mesh.visibility = 0;
           }
+
+          if (mesh.name.includes("Collider") && !isRectangular) {
+            mesh.isPickable = true;
+          } else {
+            mesh.isPickable = false;
+          }
         } else {
           mesh.position = new Vector3(0 + colOffset, 15, 44 + rowOffset);
           mesh.rotation = rotation;

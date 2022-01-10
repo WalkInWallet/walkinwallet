@@ -194,12 +194,13 @@ const Scene = (props) => {
 
       const collider = MeshBuilder.CreateBox(
         "collider",
-        { width: 1, depth: 50, height: 1 },
+        { width: 1, depth: 85, height: 1 },
         mainScene
       );
+
       collider.parent = camera;
       collider.visibility = 0;
-      collider.position = new Vector3(0, 0, 30);
+      collider.position = new Vector3(0, 0, 40);
       collider.isPickable = false;
 
       const light = new HemisphericLight(
@@ -286,10 +287,10 @@ const Scene = (props) => {
       //const sphere = MeshBuilder.CreateSphere("spehere", { diameter: 2 });
 
       mainScene.onPointerObservable.add(({ pickInfo, type }) => {
-        if (type === PointerEventTypes.POINTERDOWN) {
+        if (type === PointerEventTypes.POINTERTAP) {
           /*if (pickInfo.hit) {
             console.log(pickInfo.pickedMesh.name);
-            sphere.position = pickInfo.pickedPoint;
+            //sphere.position = pickInfo.pickedPoint;
           }*/
 
           if (
@@ -297,22 +298,34 @@ const Scene = (props) => {
               pickInfo.pickedMesh.name.startsWith("Collider#")) ||
             pickInfo.pickedMesh.name.startsWith("Painting#")
           ) {
+            const screenWidth = Math.max(
+              window.screen.width,
+              window.innerWidth
+            );
+            let distance = 80;
+
+            if (screenWidth > 800) {
+              distance = 55;
+            } else if (screenWidth > 360) {
+              distance = 80 - (25 / 440) * (screenWidth - 360);
+            }
+
             if (pickInfo.pickedMesh.name.includes("right")) {
               let meshPosition = pickInfo.pickedMesh.absolutePosition;
-              camera.position.x = meshPosition.x - 40;
-              camera.position.z = meshPosition.z + 2;
+              camera.position.x = meshPosition.x - distance;
+              camera.position.z = meshPosition.z;
             } else if (pickInfo.pickedMesh.name.includes("top")) {
               let meshPosition = pickInfo.pickedMesh.absolutePosition;
-              camera.position.x = meshPosition.x - 2;
-              camera.position.z = meshPosition.z - 47.5;
+              camera.position.x = meshPosition.x;
+              camera.position.z = meshPosition.z - distance;
             } else if (pickInfo.pickedMesh.name.includes("bottom")) {
               let meshPosition = pickInfo.pickedMesh.absolutePosition;
-              camera.position.x = meshPosition.x - 2;
-              camera.position.z = meshPosition.z + 45;
+              camera.position.x = meshPosition.x;
+              camera.position.z = meshPosition.z + distance;
             } else if (pickInfo.pickedMesh.name.includes("left")) {
               let meshPosition = pickInfo.pickedMesh.absolutePosition;
-              camera.position.x = meshPosition.x + 40;
-              camera.position.z = meshPosition.z - 2;
+              camera.position.x = meshPosition.x + distance;
+              camera.position.z = meshPosition.z;
             }
 
             camera.setTarget(pickInfo.pickedMesh.absolutePosition);
