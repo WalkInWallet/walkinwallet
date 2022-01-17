@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {
@@ -23,4 +23,29 @@ const useLocalStorage = (key, initialValue) => {
   return [storedValue, setValue];
 };
 
-export { useLocalStorage };
+const getWindowDimensions = () => {
+  const { innerWidth, innerHeight, screen } = window;
+  const width = Math.max(screen.width, innerWidth);
+  const height = Math.max(screen.height, innerHeight);
+
+  return { width, height };
+};
+
+const useWindowDimensions = () => {
+  const [windowDimensions, setWindowDimensions] = useState(
+    getWindowDimensions()
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions(getWindowDimensions());
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowDimensions;
+};
+
+export { useLocalStorage, useWindowDimensions };

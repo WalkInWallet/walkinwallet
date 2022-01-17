@@ -21,7 +21,7 @@ import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { createUseStyles } from "react-jss";
-import { Button } from "antd";
+import { Button, Collapse } from "antd";
 import {
   SettingOutlined,
   DisconnectOutlined,
@@ -30,6 +30,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useLocalStorage } from "../helper";
 import Settings from "../components/Settings";
+import { useMoralis } from "react-moralis";
+import { useParams } from "react-router-dom";
 
 const useStyles = createUseStyles({
   fullscreen: {
@@ -52,12 +54,11 @@ const useStyles = createUseStyles({
   },
   hud: {
     bottom: 0,
-    height: "fit-content",
     position: "absolute",
-    padding: 16,
     width: "100%",
-    color: "white",
-    background: "rgba(0,0,0,0.65)",
+    borderTop: "1px solid rgba(255, 255, 255, 0.85)",
+    background: "rgba(255, 255, 255, 0.7)",
+    backdropFilter: "blur(9px)",
   },
   info: {
     position: "absolute",
@@ -67,6 +68,8 @@ const useStyles = createUseStyles({
     width: 48,
   },
 });
+
+const { Panel } = Collapse;
 
 const Scene = (props) => {
   const CAMERA_HEIGHT = 40;
@@ -98,15 +101,13 @@ const Scene = (props) => {
   const [hudInfos, setHudInfos] = useState({});
   const isDrawerOpen = useRef(false);
   const classes = useStyles();
-  const [hideEverything, setHideEverything] = useLocalStorage(
-    "user.settings.overlay.hideEverything",
-    false
-  );
   const [showTitleOnly, setShowTitleOnly] = useLocalStorage(
     "user.settings.overlay.titleOnly",
     hasTouchScreen
   );
   const loadedPictures = useRef([]);
+  const { user } = useMoralis();
+  const { address } = useParams();
 
   const navigate = useNavigate();
   const {
@@ -192,15 +193,28 @@ const Scene = (props) => {
       camera.ellipsoid = new Vector3(1.5, 0.5, 1.5);
       camera.checkCollisions = true;
 
+      const screenWidth = Math.max(window.screen.width, window.innerWidth);
+
+      let depth = 85;
+      let offset = 40;
+
+      if (screenWidth > 800) {
+        depth = 55;
+        offset = 30;
+      } else if (screenWidth > 360) {
+        depth = 85 - (30 / 440) * (screenWidth - 360);
+        offset = 40 - (10 / 440) * (screenWidth - 360);
+      }
+
       const collider = MeshBuilder.CreateBox(
         "collider",
-        { width: 1, depth: 85, height: 1 },
+        { width: 1, depth: depth, height: 1 },
         mainScene
       );
 
       collider.parent = camera;
       collider.visibility = 0;
-      collider.position = new Vector3(0, 0, 40);
+      collider.position = new Vector3(0, 0, offset);
       collider.isPickable = false;
 
       const light = new HemisphericLight(
@@ -419,25 +433,27 @@ const Scene = (props) => {
           navigate("/", { replace: true });
         }}
       />
-      <Button
-        className={classes.info}
-        type="primary"
-        style={{ display: drawerVisible ? "none" : "block" }}
-        icon={<SettingOutlined style={{ fontSize: "1.8rem" }} />}
-        shape="circle"
-        onClick={() => {
-          setDrawerVisible(true);
-          isDrawerOpen.current = true;
-        }}
-      />
+
+      {user &&
+        user.attributes &&
+        user.attributes.ethAddress &&
+        user.attributes.ethAddress.toLowerCase() === address.toLowerCase() && (
+          <Button
+            className={classes.info}
+            type="primary"
+            style={{ display: drawerVisible ? "none" : "block" }}
+            icon={<SettingOutlined style={{ fontSize: "1.8rem" }} />}
+            shape="circle"
+            onClick={() => {
+              setDrawerVisible(true);
+              isDrawerOpen.current = true;
+            }}
+          />
+        )}
       <Settings
         visible={drawerVisible}
         userLinkSecret={userLinkSecret}
         galleryVisibility={galleryVisibility}
-        hideEverything={hideEverything}
-        setHideEverything={setHideEverything}
-        showTitleOnly={showTitleOnly}
-        setShowTitleOnly={setShowTitleOnly}
         onClose={() => {
           setDrawerVisible(false);
           isDrawerOpen.current = false;
@@ -448,40 +464,42 @@ const Scene = (props) => {
         onSceneReady={(scene) => setMainScene(scene)}
         className={classes.fullscreen}
       />
-      <div
+      <Collapse
         className={classes.hud}
+        activeKey={showTitleOnly ? null : 0}
+        onChange={(panels) => {
+          if (panels.length === 0) {
+            setShowTitleOnly(true);
+          } else {
+            setShowTitleOnly(false);
+          }
+        }}
+        ghost
         style={{
-          display: hudDisplayVisible && !hideEverything ? "block" : "none",
+          display: hudDisplayVisible ? "block" : "none",
         }}
       >
-        <a
-          style={{
-            fontWeight: "bold",
-            userSelect: "none",
-          }}
-          target="_blank"
-          rel="noopener noreferrer"
-          href={hudInfos.link}
+        <Panel
+          header={
+            <a target="_blank" rel="noopener noreferrer" href={hudInfos.link}>
+              {hudInfos.name}{" "}
+              {hudInfos.offline ? <DisconnectOutlined /> : <LinkOutlined />}
+            </a>
+          }
         >
-          {hudInfos.name}{" "}
-          {hudInfos.offline ? <DisconnectOutlined /> : <LinkOutlined />}
-        </a>
-
-        <p
-          style={{
-            display: showTitleOnly ? "none" : "block",
-            userSelect: "none",
-            maxHeight: "20vh",
-            overflowY: "auto",
-            paddingRight: 6,
-            marginTop: 6,
-          }}
-        >
-          {hudInfos.offline
-            ? "This artwork is offline, protected or currently unfetchable. Try to click on the artwork title and use it as direct link to get more information."
-            : hudInfos.description}
-        </p>
-      </div>
+          <p
+            style={{
+              maxHeight: "15vh",
+              overflowY: "auto",
+              paddingRight: 6,
+            }}
+          >
+            {hudInfos.offline
+              ? "This artwork is offline, protected or currently unfetchable. Try to click on the artwork title and use it as direct link to get more information."
+              : hudInfos.description}
+          </p>
+        </Panel>
+      </Collapse>
     </div>
   );
 };

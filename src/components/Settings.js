@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Drawer, Select, Switch, Row, Col, Tooltip, message } from "antd";
+import { Drawer, Select, Row, Col, Tooltip, message } from "antd";
 import { createUseStyles } from "react-jss";
 import { useMoralis } from "react-moralis";
 import { useParams } from "react-router-dom";
@@ -26,16 +26,7 @@ const useStyles = createUseStyles({
 });
 
 const Settings = (props) => {
-  const {
-    onClose,
-    visible,
-    userLinkSecret,
-    galleryVisibility,
-    hideEverything,
-    setHideEverything,
-    showTitleOnly,
-    setShowTitleOnly,
-  } = props;
+  const { onClose, visible, userLinkSecret, galleryVisibility } = props;
   const { address } = useParams();
   const [visibility, setVisibility] = useState();
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -153,26 +144,6 @@ const Settings = (props) => {
           </Row>
         </>
       )}
-      <h2>Information Overlay</h2>
-      <Row gutter={[0, 8]}>
-        <Col span={24}>
-          <Switch
-            checked={showTitleOnly || hideEverything}
-            disabled={hideEverything}
-            onChange={(value) => setShowTitleOnly(value)}
-          />
-          <span className={classes.label}>Hide description</span>
-        </Col>
-        <Col span={24}>
-          <Switch
-            checked={hideEverything}
-            onChange={(value) => {
-              setHideEverything(value);
-            }}
-          />
-          <span className={classes.label}>Hide title and description</span>
-        </Col>
-      </Row>
     </Drawer>
   );
 };
