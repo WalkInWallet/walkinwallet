@@ -103,7 +103,7 @@ const useStyles = createUseStyles({
     marginTop: 24,
     marginBottom: 24,
   },
-  faq: {
+  links: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -113,13 +113,19 @@ const useStyles = createUseStyles({
       marginTop: 48,
       marginBottom: 24,
     },
+  },
+  link: {
+    margin: "0 12px",
+    "& button": {
+      minWidth: 110,
+    },
     "& span": {
       padding: "0 6px",
     },
   },
 });
 
-const WelcomePage = () => {
+const Welcome = () => {
   const classes = useStyles();
   const navigate = useNavigate();
   const { logout, isAuthenticated } = useMoralis();
@@ -199,18 +205,33 @@ const WelcomePage = () => {
             </Row>
           </Col>
           <Col span={24}>
-            <div className={classes.faq}>
-              <Button
-                style={{ borderRadius: 0 }}
-                size="large"
-                type="primary"
-                onClick={() => {
-                  navigate("/faq", { replace: true });
-                }}
-                danger
-              >
-                FAQ
-              </Button>
+            <div className={classes.links}>
+              <div className={classes.link}>
+                <Button
+                  style={{ borderRadius: 0 }}
+                  size="large"
+                  type="primary"
+                  onClick={() => {
+                    navigate("/faq", { replace: true });
+                  }}
+                  danger
+                >
+                  FAQ
+                </Button>
+              </div>
+              <div className={classes.link}>
+                <Button
+                  style={{ borderRadius: 0 }}
+                  size="large"
+                  type="primary"
+                  onClick={() => {
+                    navigate("/benefits", { replace: true });
+                  }}
+                  danger
+                >
+                  Benefits
+                </Button>
+              </div>
             </div>
           </Col>
         </Row>
@@ -220,4 +241,4 @@ const WelcomePage = () => {
   );
 };
 
-export default WelcomePage;
+export default Welcome;

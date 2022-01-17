@@ -5,7 +5,6 @@ import { buildGallery } from "./3d/MapGenerator";
 import { hangPaintings } from "./3d/PaintingDrawer";
 import Scene from "./3d/Scene";
 import "./App.css";
-import WelcomePage from "./pages/WelcomePage";
 import {
   BrowserRouter as Router,
   Routes,
@@ -15,7 +14,7 @@ import {
 } from "react-router-dom";
 import { createUseStyles } from "react-jss";
 import { message, Progress } from "antd";
-import FAQ from "./pages/FAQ";
+import { FAQ, Welcome, Benefits } from "./pages";
 
 const useStyles = createUseStyles({
   page: {
@@ -498,8 +497,9 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<WelcomePage />} />
+        <Route path="/" element={<Welcome />} />
         <Route path="/faq" element={<FAQ />} />
+        <Route path="/benefits" element={<Benefits />} />
         <Route path="/:address" element={<Main />} />
       </Routes>
     </Router>
