@@ -1,10 +1,12 @@
-import { Button, Card, Row, Col } from "antd";
+import { useState } from "react";
+import { Button, Card, Row, Col, Input } from "antd";
+
 import { createUseStyles } from "react-jss";
-import Account from "../components/Account";
-import { useMoralis } from "react-moralis";
 import Blockie from "../components/Blockie";
 import { useNavigate } from "react-router-dom";
 import Footer from "./Footer";
+
+const { Search } = Input;
 
 const useStyles = createUseStyles({
   page: {
@@ -33,7 +35,7 @@ const useStyles = createUseStyles({
     "@media screen and (min-width: 800px)": {
       width: "80%",
     },
-    "@media screen and (min-width: 576px)": {
+    "@media screen and (min-width: 768px)": {
       paddingTop: "10vh",
       paddingBottom: 0,
     },
@@ -47,15 +49,17 @@ const useStyles = createUseStyles({
     fontSize: 28,
     fontWeight: 600,
     marginBottom: 0,
-    "@media screen and (max-width: 576px)": {
+    "@media screen and (max-width: 768px)": {
       textAlign: "center",
     },
   },
   title: {
     color: "#27448d",
-    fontSize: 20,
-    fontWeight: 600,
-    "@media screen and (max-width: 576px)": {
+    marginTop: 24,
+    marginBottom: 24,
+    fontSize: 18,
+    fontWeight: 500,
+    "@media screen and (max-width: 768px)": {
       textAlign: "center",
     },
   },
@@ -92,16 +96,9 @@ const useStyles = createUseStyles({
   },
   card: {
     margin: 0,
-    "@media screen and (max-width: 576px)": {
+    "@media screen and (max-width: 768px)": {
       margin: "0 auto",
     },
-  },
-  account: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-    marginBottom: 24,
   },
   links: {
     display: "flex",
@@ -109,7 +106,7 @@ const useStyles = createUseStyles({
     alignItems: "center",
     marginTop: 32,
     marginBottom: 48,
-    "@media screen and (max-width: 576px)": {
+    "@media screen and (max-width: 768px)": {
       marginTop: 48,
       marginBottom: 24,
     },
@@ -123,12 +120,28 @@ const useStyles = createUseStyles({
       padding: "0 6px",
     },
   },
+  search: {
+    maxWidth: "40vw",
+    "@media screen and (max-width: 768px)": {
+      maxWidth: "80vw",
+      marginBottom: 12,
+      marginTop: 12,
+    },
+  },
+  address: {
+    "@media screen and (max-width: 768px)": {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      marginBottom: 32,
+    },
+  },
 });
 
 const Welcome = () => {
   const classes = useStyles();
   const navigate = useNavigate();
-  const { logout, isAuthenticated } = useMoralis();
+  const [address, setAddress] = useState("");
 
   const getEllipsisTxt = (str, n = 12) => {
     if (str) {
@@ -145,36 +158,39 @@ const Welcome = () => {
           <span>WalkInWallet</span>
         </div>
         <div className={classes.space} />
-        {isAuthenticated && (
-          <Button
-            type="primary"
-            className={classes.button}
-            onClick={() => {
-              logout();
-            }}
-          >
-            Logout
-          </Button>
-        )}
       </div>
 
       <img src="background.png" alt="preview of a 3d wallet" />
       <div className={classes.content}>
-        <Row gutter={[{ xs: 0, sm: 24 }, 0]}>
-          <Col xs={24} sm={11} md={14}>
+        <Row
+          gutter={[{ xs: 0, sm: 24 }, 0]}
+          style={{ justifyContent: "center" }}
+        >
+          <Col sm={24} md={14} className={classes.address}>
             <p className={classes.subtitle}>
               Walk in wallets as you would walk in galleries
             </p>
-            <div className={classes.account}>
-              <Account />
-            </div>
             <p className={classes.title}>
-              Login and start walking. No manual configuration required, NFT
-              support for Binance Smart Chain, Ethereum Mainnet and Polygon
-              Network
+              Enter a wallet or contract address and start walking. No manual
+              configuration required, NFT support for Binance Smart Chain,
+              Ethereum Mainnet and Polygon Network
             </p>
+            <Search
+              placeholder="0xaBc0123..."
+              allowClear
+              enterButton="Enter"
+              size="large"
+              className={classes.search}
+              onChange={(event) => setAddress(event.target.value)}
+              onSearch={() => {
+                window.location.href = `/${address}`;
+              }}
+              onPressEnter={() => {
+                window.location.href = `/${address}`;
+              }}
+            />
           </Col>
-          <Col xs={24} sm={13} md={10}>
+          <Col sm={24} md={10}>
             <Row gutter={[0, 24]}>
               <Col span={24}>
                 <Card

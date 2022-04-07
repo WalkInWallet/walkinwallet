@@ -13,7 +13,7 @@ import {
   useParams,
 } from "react-router-dom";
 import { createUseStyles } from "react-jss";
-import { message, Progress } from "antd";
+import { Progress } from "antd";
 import { FAQ, Welcome, Benefits } from "./pages";
 
 const useStyles = createUseStyles({
@@ -46,20 +46,14 @@ const useStyles = createUseStyles({
 
 const Main = (props) => {
   const { account } = useMoralisWeb3Api();
-  const { user } = useMoralis();
 
   const { isInitialized } = useMoralis();
   const [progress, setProgress] = useState(false);
-  const [hasViewPermissions, setHasViewPermissions] = useState(false);
-  const [requestedPermissions, setRequestedPermissions] = useState(false);
   const [sceneVisible, setSceneVisible] = useState(false);
   const [stage, setStage] = useState("Read wallet");
   const [nfts, setNfts] = useState();
   const [gallery, setGallery] = useState();
   const [paintings, setPaintings] = useState();
-  const [galleryVisibility, setGalleryVisibility] = useState("private");
-  const [userInfosNotCollected, setUserInfosNotCollected] = useState(true);
-  const [userLinkSecret, setUserLinkSecret] = useState("");
   const { address } = useParams();
 
   const classes = useStyles();
@@ -149,13 +143,11 @@ const Main = (props) => {
   }, [account, address]);
 
   useEffect(() => {
-    if (hasViewPermissions) {
-      setNfts();
-      setStage("Read wallet");
-      setProgress(0);
-      fetchNFTs();
-    }
-  }, [fetchNFTs, address, hasViewPermissions, isInitialized]);
+    setNfts();
+    setStage("Read wallet");
+    setProgress(0);
+    fetchNFTs();
+  }, [fetchNFTs, address, isInitialized]);
 
   useEffect(() => {
     const fetchImage = async (url, withCorsProxy) => {
@@ -212,12 +204,7 @@ const Main = (props) => {
       }
     };
 
-    if (
-      hasViewPermissions &&
-      sceneVisible &&
-      typeof nfts !== "undefined" &&
-      nfts.length > 0
-    ) {
+    if (sceneVisible && typeof nfts !== "undefined" && nfts.length > 0) {
       let fetchedPaintings = [];
       let stopFetching = false;
 
@@ -354,91 +341,11 @@ const Main = (props) => {
         stopFetching = true;
       };
     }
-  }, [sceneVisible, nfts, hasViewPermissions]);
-
-  useEffect(() => {
-    if (
-      userInfosNotCollected &&
-      isInitialized &&
-      user &&
-      user.attributes &&
-      user.attributes.ethAddress &&
-      user.attributes.ethAddress.toLowerCase() === address.toLowerCase()
-    ) {
-      axios
-        .get("https://us-central1-walkinwallet.cloudfunctions.net/api/infos", {
-          headers: {
-            "x-user-message": encodeURI(
-              user.attributes.authData.moralisEth.data
-            ),
-            "x-user-signature": encodeURI(
-              user.attributes.authData.moralisEth.signature
-            ),
-          },
-        })
-        .then((response) => {
-          setUserLinkSecret(response.data.secret);
-          setGalleryVisibility(response.data.visibility);
-        })
-        .catch((error) => {
-          console.warn("WalkInWallet backend is currently not available.");
-          console.warn(error);
-        })
-        .finally(() => {
-          setUserInfosNotCollected(false);
-        });
-    }
-  }, [isInitialized, user, address, userInfosNotCollected]);
-
-  useEffect(() => {
-    if (
-      isInitialized &&
-      user &&
-      user.attributes &&
-      user.attributes.ethAddress &&
-      user.attributes.ethAddress.toLowerCase() === address.toLowerCase()
-    ) {
-      setHasViewPermissions(true);
-    } else if (isInitialized) {
-      setRequestedPermissions(false);
-      axios
-        .get(
-          `https://us-central1-walkinwallet.cloudfunctions.net/api/v2/check/${address}`
-        )
-        .then((response) => {
-          setHasViewPermissions(response.data.allowed);
-        })
-        .catch((error) => {
-          message.warn(
-            "Failed to fetch wallet permissions. Please try again later and/or send us a mail to contact@walkinwallet.com"
-          );
-          console.warn(error);
-        })
-        .finally(() => setRequestedPermissions(true));
-    } else {
-      setHasViewPermissions(false);
-    }
-  }, [isInitialized, user, address]);
+  }, [sceneVisible, nfts]);
 
   const onSceneReady = useCallback(() => setSceneVisible(true), []);
 
-  if (requestedPermissions && !hasViewPermissions) {
-    return (
-      <div className={classes.page}>
-        <p>
-          This wallet is not marked as a public wallet. Please login to start
-          walking if it's yours.
-        </p>
-        <Link to="/">Go back</Link>
-      </div>
-    );
-  }
-
-  if (
-    typeof nfts !== "undefined" &&
-    hasViewPermissions &&
-    typeof gallery !== "undefined"
-  ) {
+  if (typeof nfts !== "undefined" && typeof gallery !== "undefined") {
     if (nfts.length === 0) {
       return (
         <div className={classes.page}>
@@ -465,8 +372,6 @@ const Main = (props) => {
           gallery={gallery}
           paintings={paintings}
           nfts={nfts}
-          userLinkSecret={userLinkSecret}
-          galleryVisibility={galleryVisibility}
         />
       </div>
     );
@@ -481,19 +386,6 @@ const Main = (props) => {
 };
 
 const App = () => {
-  const { enableWeb3, isAuthenticated, isWeb3Enabled, isWeb3EnableLoading } =
-    useMoralis();
-
-  useEffect(() => {
-    if (isAuthenticated && !isWeb3Enabled && !isWeb3EnableLoading) {
-      if (typeof window.ethereum === "undefined") {
-        enableWeb3({ provider: "walletconnect" });
-      } else {
-        enableWeb3();
-      }
-    }
-  }, [isAuthenticated, isWeb3EnableLoading, isWeb3Enabled, enableWeb3]);
-
   return (
     <Router>
       <Routes>

@@ -21,17 +21,10 @@ import { createRoomTile } from "./RoomBuilder";
 import { drawPainting } from "./PaintingDrawer";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { createUseStyles } from "react-jss";
-import { Button, Collapse } from "antd";
-import {
-  SettingOutlined,
-  DisconnectOutlined,
-  LinkOutlined,
-} from "@ant-design/icons";
+import { Collapse } from "antd";
+import { DisconnectOutlined, LinkOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useLocalStorage } from "../helper";
-import Settings from "../components/Settings";
-import { useMoralis } from "react-moralis";
-import { useParams } from "react-router-dom";
 
 const useStyles = createUseStyles({
   fullscreen: {
@@ -95,29 +88,20 @@ const Scene = (props) => {
     }
     return touchScreen;
   }, []);
-  const [drawerVisible, setDrawerVisible] = useState(false);
+
   const [mainScene, setMainScene] = useState();
   const [initialized, setInitialized] = useState(false);
   const [hudInfos, setHudInfos] = useState({});
-  const isDrawerOpen = useRef(false);
+
   const classes = useStyles();
   const [showTitleOnly, setShowTitleOnly] = useLocalStorage(
     "user.settings.overlay.titleOnly",
     hasTouchScreen
   );
   const loadedPictures = useRef([]);
-  const { user } = useMoralis();
-  const { address } = useParams();
 
   const navigate = useNavigate();
-  const {
-    gallery,
-    paintings,
-    nfts,
-    onSceneReady,
-    userLinkSecret,
-    galleryVisibility,
-  } = props;
+  const { gallery, paintings, nfts, onSceneReady } = props;
 
   useEffect(() => {
     if (
@@ -298,15 +282,8 @@ const Scene = (props) => {
         }
       }
 
-      //const sphere = MeshBuilder.CreateSphere("spehere", { diameter: 2 });
-
       mainScene.onPointerObservable.add(({ pickInfo, type }) => {
         if (type === PointerEventTypes.POINTERTAP) {
-          /*if (pickInfo.hit) {
-            console.log(pickInfo.pickedMesh.name);
-            //sphere.position = pickInfo.pickedPoint;
-          }*/
-
           if (
             (pickInfo.hit &&
               pickInfo.pickedMesh.name.startsWith("Collider#")) ||
@@ -354,13 +331,6 @@ const Scene = (props) => {
         pointLight.position.z = camera.position.z;
       });
       setInitialized(true);
-
-      document.addEventListener("keydown", (event) => {
-        if (event.code === "KeyM") {
-          isDrawerOpen.current = !isDrawerOpen.current;
-          setDrawerVisible(isDrawerOpen.current);
-        }
-      });
     }
   }, [mainScene, initialized, onSceneReady, hasTouchScreen, gallery, nfts]);
 
@@ -434,31 +404,6 @@ const Scene = (props) => {
         }}
       />
 
-      {user &&
-        user.attributes &&
-        user.attributes.ethAddress &&
-        user.attributes.ethAddress.toLowerCase() === address.toLowerCase() && (
-          <Button
-            className={classes.info}
-            type="primary"
-            style={{ display: drawerVisible ? "none" : "block" }}
-            icon={<SettingOutlined style={{ fontSize: "1.8rem" }} />}
-            shape="circle"
-            onClick={() => {
-              setDrawerVisible(true);
-              isDrawerOpen.current = true;
-            }}
-          />
-        )}
-      <Settings
-        visible={drawerVisible}
-        userLinkSecret={userLinkSecret}
-        galleryVisibility={galleryVisibility}
-        onClose={() => {
-          setDrawerVisible(false);
-          isDrawerOpen.current = false;
-        }}
-      />
       <SceneComponent
         antialias
         onSceneReady={(scene) => setMainScene(scene)}
